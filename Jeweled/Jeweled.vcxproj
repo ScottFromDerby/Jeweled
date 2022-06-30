@@ -151,7 +151,7 @@ xcopy ..\SDL2_mixer-2.0.4\lib\x64\libvorbisfile-3.dll $(OutputPath) /y
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\SDL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\SDL2-2.0.22\include;..\SDL2_image-2.0.5\include;..\SDL2_mixer-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -160,20 +160,33 @@ xcopy ..\SDL2_mixer-2.0.4\lib\x64\libvorbisfile-3.dll $(OutputPath) /y
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>SDL.lib;SDLmain.lib;sdl_ttf.lib;sdl_image.lib;SDL_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\SDL\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\SDL2-2.0.22\lib\x86;..\SDL2_image-2.0.5\lib\x86;..\SDL2_mixer-2.0.4\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy ..\SDL2-2.0.22\lib\x86\SDL2.dll $(OutputPath) /y
+xcopy ..\SDL2_image-2.0.5\lib\x86\SDL2_image.dll $(OutputPath) /y
+xcopy ..\SDL2_image-2.0.5\lib\x86\libjpeg-9.dll $(OutputPath) /y
+xcopy ..\SDL2_image-2.0.5\lib\x86\libpng16-16.dll $(OutputPath) /y
+xcopy ..\SDL2_image-2.0.5\lib\x86\zlib1.dll $(OutputPath) /y
+xcopy ..\SDL2_mixer-2.0.4\lib\x86\SDL2_mixer.dll $(OutputPath) /y
+xcopy ..\SDL2_mixer-2.0.4\lib\x86\libmodplug-1.dll $(OutputPath) /y
+xcopy ..\SDL2_mixer-2.0.4\lib\x86\libvorbis-0.dll $(OutputPath) /y
+xcopy ..\SDL2_mixer-2.0.4\lib\x86\libogg-0.dll $(OutputPath) /y
+xcopy ..\SDL2_mixer-2.0.4\lib\x86\libvorbisfile-3.dll $(OutputPath) /y
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\SDL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\SDL2-2.0.22\include;..\SDL2_image-2.0.5\include;..\SDL2_mixer-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -183,13 +196,26 @@ xcopy ..\SDL2_mixer-2.0.4\lib\x64\libvorbisfile-3.dll $(OutputPath) /y
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>SDL.lib;SDLmain.lib;sdl_ttf.lib;sdl_image.lib;SDL_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\SDL\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_mixer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\SDL2-2.0.22\lib\x64;..\SDL2_image-2.0.5\lib\x64;..\SDL2_mixer-2.0.4\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy ..\SDL2-2.0.22\lib\x64\SDL2.dll $(OutputPath) /y
+xcopy ..\SDL2_image-2.0.5\lib\x64\SDL2_image.dll $(OutputPath) /y
+xcopy ..\SDL2_image-2.0.5\lib\x64\libjpeg-9.dll $(OutputPath) /y
+xcopy ..\SDL2_image-2.0.5\lib\x64\libpng16-16.dll $(OutputPath) /y
+xcopy ..\SDL2_image-2.0.5\lib\x64\zlib1.dll $(OutputPath) /y
+xcopy ..\SDL2_mixer-2.0.4\lib\x64\SDL2_mixer.dll $(OutputPath) /y
+xcopy ..\SDL2_mixer-2.0.4\lib\x64\libmodplug-1.dll $(OutputPath) /y
+xcopy ..\SDL2_mixer-2.0.4\lib\x64\libvorbis-0.dll $(OutputPath) /y
+xcopy ..\SDL2_mixer-2.0.4\lib\x64\libogg-0.dll $(OutputPath) /y
+xcopy ..\SDL2_mixer-2.0.4\lib\x64\libvorbisfile-3.dll $(OutputPath) /y
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ActiveObject.cpp" />
