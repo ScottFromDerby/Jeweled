@@ -33,7 +33,7 @@ int AOSelectionCursor::Render()
 	const unsigned short ANIMATION_FRAMES = 6;
 	const unsigned short ANIMATION_DELAY = 5;
 
-	if (m_isVisible)
+	if (m_bIsVisible)
 	{
 		m_animationFrame++;
 		if (m_animationFrame >= ANIMATION_FRAMES * ANIMATION_DELAY)

@@ -30,11 +30,11 @@ AOJewel::~AOJewel()
 
 int AOJewel::Init()
 {
-	m_isInHoverState = false;
-	m_isBeingRemoved = false;
-	m_isDropping = false;
+	m_bIsInHoverState = false;
+	m_bIsBeingRemoved = false;
+	m_bIsDropping = false;
 	m_pixelDropTarget = m_pos.y;
-	m_isDead = false;
+	m_bIsDead = false;
 	m_dropSpeed = DROP_SPEED_BASE;
 	m_beingRemovedOffset = 0;
 	return 0;
@@ -45,18 +45,18 @@ int AOJewel::Update()
 	// if it has finished animating
 	if (m_animationFrame == 0)
 	{
-		m_isInHoverState = false;
+		m_bIsInHoverState = false;
 	}
 
 	// movement code for falling/animating
-	if (m_isBeingRemoved)
+	if (m_bIsBeingRemoved)
 	{
 		m_beingRemovedOffset++;
 		//m_pos.x += 1;
 		//m_pos.y += 1;
 		m_size.x -= 2;
 		m_size.y -= 2;
-		if (m_size.x == 0)
+		if (m_size.x <= 0)
 		{
 			m_beingRemovedOffset = 0;
 			// finished animating - choose new jewel, move to above screen
@@ -64,13 +64,13 @@ int AOJewel::Update()
 			m_size.y = JEWEL_SIZE;
 			unsigned short newJewelType = (unsigned short)((float)(rand()) / RAND_MAX * NUM_JEWEL_TYPES);
 			m_jewelType = (JEWEL_TYPE)newJewelType;
-			m_isBeingRemoved = false;
+			m_bIsBeingRemoved = false;
 			// set as dead so that the gameboard knows to remove and respawn
 			//  this jewel.
-			m_isDead = true;
+			m_bIsDead = true;
 		}
 	}
-	else if (m_isDropping)
+	else if (m_bIsDropping)
 	{
 		if ((float)(m_pos.y) + m_dropSpeed >= (float)m_pixelDropTarget)
 		{
@@ -78,7 +78,7 @@ int AOJewel::Update()
 			AlgorithmHelper::EstimateJewelBoardLocation(this, x, y);
 			m_pos.y = m_pixelDropTarget;
 			printf("Jewel (likely:[%d][%d]) finished dropping at y:%d\n", x, y, m_pos.y);
-			m_isDropping = false;
+			m_bIsDropping = false;
 			m_dropSpeed = DROP_SPEED_BASE;
 			SDLAudio::Get()->PlaySFX("GemOnGem", 0.3f);
 		}
@@ -91,6 +91,8 @@ int AOJewel::Update()
 			{
 				m_dropSpeed = DROP_SPEED_MAX;
 			}
+
+			//printf("Jewel [%d][%d] dropping at speed %1.3f\n", m_initialGridXPos, m_initialGridYPos, m_dropSpeed);
 		}
 	}
 
@@ -102,18 +104,20 @@ int AOJewel::Render()
 	const unsigned short ANIMATION_FRAMES = 15;
 	const unsigned short ANIMATION_DELAY = 2;
 
-	if (m_isSelected) // SELECTED
+	if (m_bIsSelected) // SELECTED
 	{
 		//	starting pos in spritesheet is...
 		const Sint16 SPRITE_SHEET_X = (int)(m_animationFrame / ANIMATION_DELAY) * JEWEL_SIZE;
 		const Sint16 SPRITE_SHEET_Y = m_jewelType * (2 * JEWEL_SIZE);
 
-		SDL_Rect srcRect = { SPRITE_SHEET_X, SPRITE_SHEET_Y, static_cast<Uint16>(m_size.x), static_cast<Uint16>(m_size.y) };
+		SDL_Rect srcRect = { SPRITE_SHEET_X, SPRITE_SHEET_Y, JEWEL_SIZE, JEWEL_SIZE };
 
-		srcRect.x += m_beingRemovedOffset;
-		srcRect.y += m_beingRemovedOffset;
+		Sint16 x = m_pos.x + m_beingRemovedOffset;
+		Sint16 y = m_pos.y + m_beingRemovedOffset;
+		Uint16 w = m_size.x;
+		Uint16 h = m_size.y;
 
-		SDLRenderer::Get()->DrawPartialTexture(m_spriteIDBasic, &srcRect, m_pos.x, m_pos.y, m_size.x, m_size.y);
+		SDLRenderer::Get()->DrawPartialTexture(m_spriteIDBasic, &srcRect, x, y, w, h);
 
 		m_animationFrame++;
 		if (m_animationFrame >= ANIMATION_FRAMES * ANIMATION_DELAY)
@@ -121,18 +125,20 @@ int AOJewel::Render()
 			m_animationFrame = 0;
 		}
 	}
-	else if (m_isInHoverState) // HOVER
+	else if (m_bIsInHoverState) // HOVER
 	{
 		//	starting pos in spritesheet is...
 		const Sint16 SPRITE_SHEET_X = (int)(m_animationFrame / ANIMATION_DELAY) * JEWEL_SIZE;
 		const Sint16 SPRITE_SHEET_Y = (m_jewelType * (2 * JEWEL_SIZE)) + JEWEL_SIZE;
 
-		SDL_Rect srcRect = { SPRITE_SHEET_X, SPRITE_SHEET_Y, static_cast<Uint16>(m_size.x), static_cast<Uint16>(m_size.y) };
+		SDL_Rect srcRect = { SPRITE_SHEET_X, SPRITE_SHEET_Y, JEWEL_SIZE, JEWEL_SIZE };
 
-		srcRect.x += m_beingRemovedOffset;
-		srcRect.y += m_beingRemovedOffset;
+		Sint16 x = m_pos.x + m_beingRemovedOffset;
+		Sint16 y = m_pos.y + m_beingRemovedOffset;
+		Uint16 w = m_size.x;
+		Uint16 h = m_size.y;
 
-		SDLRenderer::Get()->DrawPartialTexture(m_spriteIDBasic, &srcRect, m_pos.x + m_beingRemovedOffset, m_pos.y + m_beingRemovedOffset, m_size.x, m_size.y);
+		SDLRenderer::Get()->DrawPartialTexture(m_spriteIDBasic, &srcRect, x, y, w, h);
 
 		m_animationFrame++;
 		if (m_animationFrame >= ANIMATION_FRAMES * ANIMATION_DELAY)
@@ -146,12 +152,15 @@ int AOJewel::Render()
 		const Sint16 SPRITE_SHEET_X = 0;
 		const Sint16 SPRITE_SHEET_Y = m_jewelType * (2 * JEWEL_SIZE);
 
-		SDL_Rect srcRect = { SPRITE_SHEET_X, SPRITE_SHEET_Y, static_cast<Uint16>(m_size.x), static_cast<Uint16>(m_size.y) };
+		SDL_Rect srcRect = { SPRITE_SHEET_X, SPRITE_SHEET_Y, JEWEL_SIZE, JEWEL_SIZE };
 
-		srcRect.x += m_beingRemovedOffset;
-		srcRect.y += m_beingRemovedOffset;
+		Sint16 x = m_pos.x + m_beingRemovedOffset;
+		Sint16 y = m_pos.y + m_beingRemovedOffset;
+		Uint16 w = m_size.x;
+		Uint16 h = m_size.y;
 
-		SDLRenderer::Get()->DrawPartialTexture(m_spriteIDBasic, &srcRect, m_pos.x + m_beingRemovedOffset, m_pos.y + m_beingRemovedOffset, m_size.x, m_size.y);
+		SDLRenderer::Get()->DrawPartialTexture(m_spriteIDBasic, &srcRect, x, y, w, h);
+
 	}
 
 	return 0;
@@ -165,13 +174,13 @@ bool AOJewel::HandleMouseClickDownAt(int x, int y)
 	if (x > thisJewelClickableArea.left && x < thisJewelClickableArea.right &&
 		y > thisJewelClickableArea.top && y < thisJewelClickableArea.bottom)
 	{
-		if (m_isSelected)
+		if (m_bIsSelected)
 		{
-			m_isSelected = false;
+			m_bIsSelected = false;
 		}
 		else
 		{
-			m_isSelected = true;
+			m_bIsSelected = true;
 		}
 	}
 
@@ -193,10 +202,10 @@ bool AOJewel::HandleMouseHoverAt(int x, int y)
 		y > thisJewelClickableArea.top && y < thisJewelClickableArea.bottom)
 	{
 		// hovering over this jewel - if we are not already in a hover state
-		if (!m_isInHoverState)
+		if (!m_bIsInHoverState)
 		{
 			// set hoverstate and reset hover animation
-			m_isInHoverState = true;
+			m_bIsInHoverState = true;
 			m_animationFrame = 1;
 		}
 	}
@@ -211,34 +220,42 @@ void AOJewel::Remove()
 	//  is set to true. GameBoard::Update() will pick up on all m_isDead jewels
 	//  and will respawn them.
 
-	m_isBeingRemoved = true;
+	m_bIsBeingRemoved = true;
 }
 
 void AOJewel::SetDropTarget(int newYPosTarget)
 {
 	if (newYPosTarget >= m_pixelDropTarget)
 	{
-		printf("Drop target dropping from %d to %d\n", m_pixelDropTarget,
-			newYPosTarget);
-		m_isDropping = true;
+		printf("Drop target dropping from %d to %d\n", m_pixelDropTarget, newYPosTarget);
+		m_bIsDropping = true;
 		m_pixelDropTarget = newYPosTarget;
 	}
 	else
 	{
 		// trying to set a drop target above this jewel: use ResetDropTarget() instead!
-		assert(0);
+		SDL_assert(!"trying to set a drop target above this jewel: use ResetDropTarget() instead!");
 	}
 }
+
+void AOJewel::ResetDropTarget()
+{
+	if (m_pixelDropTarget == m_pos.y)
+		return;
+
+	printf("Resetting drop target! From %d to %d\n", m_pixelDropTarget, m_pos.y);
+	m_pixelDropTarget = m_pos.y;
+}
+
 void AOJewel::SetDropTargetRelative(int newYPosTarget)
 {
 	// This sets a drop target for the jewel - a destination height in pixels
 	//  for the jewel to land at.
 	assert(newYPosTarget > 0);
-	printf("Drop target dropping from %d to %d\n", m_pixelDropTarget,
-		m_pixelDropTarget + newYPosTarget);
+	printf("Drop target dropping from %d to %d\n", m_pixelDropTarget, m_pixelDropTarget + newYPosTarget);
 
 	m_pixelDropTarget += newYPosTarget;
-	m_isDropping = true;
+	m_bIsDropping = true;
 }
 
 #ifdef _DEBUG
@@ -247,12 +264,12 @@ void AOJewel::DebugDump()
 	printf("Type %d \tPos %d %d \tSize %d ",
 		m_jewelType, m_pos.x, m_pos.y, m_size.x);
 	if (m_animationFrame != 0) printf("AnimFrame:%d ", m_animationFrame);
-	printf("%s", m_isBeingRemoved ? "BeingRemoved " : "");
-	printf("%s", m_isClickable ? "Clickable " : "");
-	printf("%s", m_isDropping ? "IsDropping " : "");
-	if (m_isDropping) printf("(to y:%d) ", m_pixelDropTarget);
-	printf("%s", m_isSelected ? "IsSelected " : "");
-	printf("%s", m_isVisible ? "IsVisible " : "");
+	printf("%s", m_bIsBeingRemoved ? "BeingRemoved " : "");
+	printf("%s", m_bIsClickable ? "Clickable " : "");
+	printf("%s", m_bIsDropping ? "IsDropping " : "");
+	if (m_bIsDropping) printf("(to y:%d) ", m_pixelDropTarget);
+	printf("%s", m_bIsSelected ? "IsSelected " : "");
+	printf("%s", m_bIsVisible ? "IsVisible " : "");
 	printf("DropTarget: %d \n", m_pixelDropTarget);
 
 }
@@ -263,14 +280,4 @@ bool AOJewel::SetPos(int x, int y)
 	m_pos.x = x;
 	m_pos.y = y;
 	return true;
-}
-
-void AOJewel::ResetDropTarget()
-{
-	if (m_pixelDropTarget == m_pos.y)
-		return;
-
-	printf("Resetting drop target! From %d to %d\n",
-		m_pixelDropTarget, m_pos.y);
-	m_pixelDropTarget = m_pos.y;
 }

@@ -14,7 +14,7 @@ public:
 	virtual int Update();
 	virtual int Render();
 
-	bool IsHoveredOver() { return m_isInHoverState; }
+	bool IsHoveredOver() { return m_bIsInHoverState; }
 
 	JEWEL_TYPE GetJewelType() { return (JEWEL_TYPE)m_jewelType; }
 	void SetJewelType(JEWEL_TYPE nType) { m_jewelType = (unsigned short)nType; }
@@ -37,11 +37,11 @@ public:
 	void DebugDump();
 #endif //_DEBUG
 
-	bool IsDead()							{ return m_isDead; }
-	void SetIsDead(bool newState)			{ m_isDead = newState; }
+	bool IsDead()							{ return m_bIsDead; }
+	void SetIsDead(bool newState)			{ m_bIsDead = newState; }
 
-	bool IsDropping()						{ return m_isDropping; }
-	void SetIsDropping(bool newState)		{ m_isDropping = newState; }
+	bool IsDropping()						{ return m_bIsDropping; }
+	void SetIsDropping(bool newState)		{ m_bIsDropping = newState; }
 
 	//	overloading pure virtual base functions
 	const char* GetType()		{ return "AOJewel"; }
@@ -55,14 +55,18 @@ private:
 	int m_pixelDropTarget;			 // The target for this object to drop to
 	float m_dropSpeed;				 // current dropping speed
 
-	bool m_isInHoverState;			 // Is being hovered over
-	bool m_isDropping;				 // Is currently dropping
-	bool m_isBeingRemoved;			 // Is about to be removed
-	bool m_isDead;					 // Jewel is dead - needs to be removed and
+	bool m_bIsInHoverState;			 // Is being hovered over
+	bool m_bIsDropping;				 // Is currently dropping
+	bool m_bIsBeingRemoved;			 // Is about to be removed
+	bool m_bIsDead;					 // Jewel is dead - needs to be removed and
 									 // respawned( will be handled within a
 									 //  single Update loop).
 
 	int m_beingRemovedOffset;
+
+public:
+	int m_initialGridXPos;
+	int m_initialGridYPos;
 };
 
 static const float DROP_SPEED_BASE = 1.5f;

@@ -50,7 +50,7 @@ GameBoard::GameBoard(const std::string& windowSpriteID, const std::string& gemSp
 int GameBoard::Init()
 {
 	printf("GameBoard::Init()\n");
-	const int JEWEL_SPACING = 0;
+	//const int JEWEL_SPACING = 1;
 	const int NUM_JEWELS = 7;
 
 	for (unsigned int i = 0; i < m_jewelsTall; ++i)
@@ -58,29 +58,31 @@ int GameBoard::Init()
 		for (unsigned int j = 0; j < m_jewelsWide; ++j)
 		{
 			VEC2 pos;
-			pos.x = MAIN_BOARD_OFFSET_X + (JEWEL_SIZE + JEWEL_SPACING) * j;
-			pos.y = MAIN_BOARD_OFFSET_Y + (JEWEL_SIZE + JEWEL_SPACING) * i;
+			pos.x = MAIN_BOARD_OFFSET_X + (JEWEL_SPACING) * j;
+			pos.y = MAIN_BOARD_OFFSET_Y + (JEWEL_SPACING) * i;
 
 			VEC2 size(JEWEL_SIZE, JEWEL_SIZE);
 
 			AOJewel* nextJewel = new AOJewel(pos, size, 0, m_gemSpriteSheetID);
 
 			nextJewel->Init();
+			nextJewel->m_initialGridXPos = j;
+			nextJewel->m_initialGridYPos = i;
 
 			m_board[j][i] = nextJewel;
 		}
 	}
 
-	AlgorithmHelper::GenerateNewBoard(m_board, true);
+	AlgorithmHelper::GenerateNewBoard(m_board, false);
 
-	m_tileBackground = SDL_CreateTexture(SDLRenderer::Get()->GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, 512, 512);
-	m_nextBackground = SDL_CreateTexture(SDLRenderer::Get()->GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, 512, 512);
+	m_tileBackground = SDL_CreateTexture(SDLRenderer::Get()->GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, 512, 512);
+	m_nextBackground = SDL_CreateTexture(SDLRenderer::Get()->GetRenderer(), SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, 512, 512);
 
 	GenerateNextTileBackground(1);
 	//m_tileBackground = m_nextBackground;
 
 	// Selection Cursor
-	VEC2 selCursorSize(JEWEL_SIZE, JEWEL_SIZE);
+	VEC2 selCursorSize(SELECTION_CURSOR_SIZE, SELECTION_CURSOR_SIZE);
 	m_selectionCursor = new AOSelectionCursor(selCursorSize, "SelectionCursor");
 	m_selectionCursor->Init();
 
@@ -102,6 +104,11 @@ int GameBoard::Init()
 	m_hint = new AOButton(VEC2(65, 305), VEC2(52, 72), "", "Hint-Hover", "", "", BUTTON_TYPE_HINT);
 	m_quit = new AOButton(VEC2(20, 404), VEC2(156, 40), "", "", "Quit-Pushed", "", BUTTON_TYPE_QUIT);
 
+	for (int i = 0; i < BOARD_SIZE; ++i)
+	{
+		m_numNewJewelsThisCascadePerColumn[i] = 0;
+	}
+	
 	return 0;
 }
 
@@ -157,8 +164,7 @@ int GameBoard::Update()
 				else
 				{
 					// physically swap them back (instantly)
-					AlgorithmHelper::SwapJewels(
-						m_selectedJewel, m_secondJewel, m_board);
+					AlgorithmHelper::SwapJewels(m_selectedJewel, m_secondJewel, m_board);
 				}
 			}
 
@@ -207,21 +213,24 @@ int GameBoard::Update()
 		}
 		else
 		{
-			for (int i = 0; i < BOARD_SIZE; ++i)
+			for (int i = BOARD_SIZE - 1; i >= 0; --i)
 			{
-				for (int j = 0; j < BOARD_SIZE; ++j)
+				for (int j = BOARD_SIZE - 1; j >= 0; --j)
 				{
 					m_board[j][i]->Update();
 					if (m_board[j][i]->IsDead())
 					{
-						AlgorithmHelper::RemoveAndSpawn(m_board[j][i], m_board);
+						AlgorithmHelper::RemoveAndSpawn(m_board[j][i], m_board, m_numNewJewelsThisCascadePerColumn[j]);
+						m_numNewJewelsThisCascadePerColumn[j]++;
 						m_bJewelsInMotion = true;
+
+						j++;//	this now refers to a new jewel, so this will need reprocessing!
 					}
-					if (m_board[j][i]->IsDropping())
+					else if (m_board[j][i]->IsDropping())
 					{
 						m_bJewelsInMotion = true;
 					}
-					if (m_board[j][i]->IsSelected())
+					else if (m_board[j][i]->IsSelected())
 					{
 						m_selectedJewel = (AOJewel*)m_board[j][i];
 					}
@@ -268,6 +277,11 @@ int GameBoard::Update()
 		//  update the number of moves available
 		m_numMovesAvailable = AlgorithmHelper::CountAvailableMoves(m_board);
 
+		for (int i = 0; i < BOARD_SIZE; ++i)
+		{
+			m_numNewJewelsThisCascadePerColumn[i] = 0;
+		}
+
 		// Remind ourselves that we do not need to redo this check - it will 
 		//  only occur again AFTER some jewel has begun moving. This ensures 
 		//  that we only process these expensive algorithms once as necessary.
@@ -300,8 +314,7 @@ int GameBoard::Update()
 		// Ensure that the cursor shall get drawn
 		m_selectionCursor->SetVisibility(true);
 		// and update the position it should be drawn at
-		m_selectionCursor->SetPos(m_selectedJewel->GetXPos(),
-			m_selectedJewel->GetYPos());
+		m_selectionCursor->SetPos(m_selectedJewel->GetXPos(), m_selectedJewel->GetYPos());
 		cursorPresent = true;
 	}
 
@@ -314,11 +327,9 @@ int GameBoard::Update()
 		//  selection cursor
 		m_selectionCursor->SetSwapAnimationFlag(true);
 		// tell the selection cursor the latest pos to draw at when rendering
-		m_selectionCursor->SetPos(m_selectedJewel->GetXPos(),
-			m_selectedJewel->GetYPos());
+		m_selectionCursor->SetPos(m_selectedJewel->GetXPos(), m_selectedJewel->GetYPos());
 		// tell the selection cursor the latest pos to mirror at when rendering
-		m_selectionCursor->SetMirrorPos(m_secondJewel->GetXPos(),
-			m_secondJewel->GetYPos());
+		m_selectionCursor->SetMirrorPos(m_secondJewel->GetXPos(), m_secondJewel->GetYPos());
 	}
 
 	m_hint->Update();
@@ -334,7 +345,8 @@ int GameBoard::Update()
 int GameBoard::Render()
 {
 	// base chequered board is at the back
-	SDLRenderer::Get()->DrawTexture(m_nextBackground, MAIN_BOARD_OFFSET_X - JEWEL_SIZE, MAIN_BOARD_OFFSET_Y - JEWEL_SIZE, 640, 480);
+	SDLRenderer::Get()->DrawTexture(m_nextBackground, MAIN_BOARD_OFFSET_X - JEWEL_SPACING, MAIN_BOARD_OFFSET_Y - JEWEL_SPACING, 512, 512);
+
 	// then (onboard) text or jewels
 	if (m_bPauseEnabled)
 	{
@@ -401,45 +413,33 @@ bool GameBoard::GenerateNextTileBackground(const unsigned int level)
 
 	SDL_Texture* pTileTextureSheet = SDLRenderer::Get()->GetTexture(m_backgroundTileSheetID);
 
-	//// Fetch the two tiles from the background tile sheet
-	//SDL_Rect src1 = { static_cast<Sint16>((loopedLevel) * (JEWEL_SIZE * 2)), 0, JEWEL_SIZE, JEWEL_SIZE };
-	//SDL_Rect src2 = { static_cast<Sint16>((loopedLevel) * (JEWEL_SIZE * 2) + JEWEL_SIZE), 0, JEWEL_SIZE, JEWEL_SIZE };
-	//SDL_Surface* pTile1 = SDL_CreateRGBSurface(SDL_SWSURFACE, JEWEL_SIZE, JEWEL_SIZE, 32, 0, 0, 0, 0);
-	//SDL_Surface* pTile2 = SDL_CreateRGBSurface(SDL_SWSURFACE, JEWEL_SIZE, JEWEL_SIZE, 32, 0, 0, 0, 0);
-	//SDL_BlitSurface(pTileTextureSheet, &src1, pTile1, nullptr);
-	//SDL_BlitSurface(pTileTextureSheet, &src2, pTile2, nullptr);
-	//
-	//// Adjust the tiled background colour
-	//static float r, g, b;
-	//
-	//if (!m_bNoRandCol)
-	//{
-	//	GetNewColourAdjustmentValues(r, g, b);
-	//}
-	//
-	//SDLRenderer::AdjustPixels(pTile1, r, g, b);
-	//SDLRenderer::AdjustPixels(pTile2, r, g, b);
-	//
-	//SDLRenderer::Get()->GenerateTiledTexture(m_nextBackground, pTile1, pTile2, 640, 480);
-	//
-	//SDL_FreeSurface(pTile1);
-	//SDL_FreeSurface(pTile2);
+	SDLRenderer::Get()->GenerateTiledTexture(m_nextBackground, pTileTextureSheet, loopedLevel, (loopedLevel * 2) + 1);
+
+	// Adjust the tiled background colour
+	static float r, g, b;
+	
+	if (!m_bNoRandCol)
+	{
+		GetNewColourAdjustmentValues(r, g, b);
+	}
+	
+	SDL_SetTextureColorMod(m_nextBackground, static_cast<Uint8>(r * 255), static_cast<Uint8>(g * 255), static_cast<Uint8>(b * 255));
 
 	return true;
 }
 
 AOJewel* GameBoard::GetJewelAt(const int& x, const int& y)
 {
-	// this is a hell of a hack, but it's an interesting one.
+	//	HACK! Reverse-lookup jewel location from cursor pos
 
 	const static Rect boardRect = { MAIN_BOARD_OFFSET_X, MAIN_BOARD_OFFSET_Y,
-								   MAIN_BOARD_OFFSET_X + JEWEL_SIZE * BOARD_SIZE,
-								   MAIN_BOARD_OFFSET_Y + JEWEL_SIZE * BOARD_SIZE };
+								   MAIN_BOARD_OFFSET_X + (JEWEL_SPACING * BOARD_SIZE),
+								   MAIN_BOARD_OFFSET_Y + (JEWEL_SPACING * BOARD_SIZE) };
 
 	if (x < boardRect.left || x >= boardRect.right ||
 		y < boardRect.top || y >= boardRect.bottom)
 	{
-		return NULL;
+		return nullptr;
 	}
 	else
 	{
@@ -448,8 +448,8 @@ AOJewel* GameBoard::GetJewelAt(const int& x, const int& y)
 		// x & y are inside the board:
 		int localX = x - MAIN_BOARD_OFFSET_X;
 		int localY = y - MAIN_BOARD_OFFSET_Y;
-		int jewelX = (int)floor((float)localX / (float)JEWEL_SIZE);
-		int jewelY = (int)floor((float)localY / (float)JEWEL_SIZE);
+		int jewelX = (int)floor((float)localX / (float)JEWEL_SPACING);
+		int jewelY = (int)floor((float)localY / (float)JEWEL_SPACING);
 
 		//printf("Found jewel: %d, %d\n", jewelX, jewelY);
 
@@ -470,10 +470,10 @@ bool AreJewelsAdjacent(AOJewel* jewel1, AOJewel* jewel2, SWAP_TYPE& swapType)
 	VEC2 pos1(jewel1->GetXPos(), jewel1->GetYPos());
 	VEC2 pos2(jewel2->GetXPos(), jewel2->GetYPos());
 
-	unsigned short col1 = (unsigned short)floor((float)pos1.x / (float)JEWEL_SIZE);
-	unsigned short col2 = (unsigned short)floor((float)pos2.x / (float)JEWEL_SIZE);
-	unsigned short row1 = (unsigned short)floor((float)pos1.y / (float)JEWEL_SIZE);
-	unsigned short row2 = (unsigned short)floor((float)pos2.y / (float)JEWEL_SIZE);
+	unsigned short col1 = (unsigned short)floor((float)pos1.x / (float)JEWEL_SPACING);
+	unsigned short col2 = (unsigned short)floor((float)pos2.x / (float)JEWEL_SPACING);
+	unsigned short row1 = (unsigned short)floor((float)pos1.y / (float)JEWEL_SPACING);
+	unsigned short row2 = (unsigned short)floor((float)pos2.y / (float)JEWEL_SPACING);
 
 	if (col1 == col2)
 	{
@@ -577,6 +577,7 @@ bool GameBoard::HandleMouseClickDownAt(const int& x, const int& y)
 							// Attempting to select two non-adjacent jewels
 							//  ...Bejeweled behaviour is to unselect
 							//      currently selected jewel
+							printf("Second jewel is NOT adjacent. Cancelling!");
 							m_selectedJewel->SetSelected(false);
 							m_selectedJewel = NULL;
 						}
@@ -584,6 +585,7 @@ bool GameBoard::HandleMouseClickDownAt(const int& x, const int& y)
 					else
 					{
 						// no jewel is selected, select this jewel!
+						printf("New jewel selected! [%d]\n", (int)nextJewel->GetJewelType());
 						nextJewel->SetSelected(true);
 						m_selectedJewel = nextJewel;
 						SDLAudio::Get()->PlaySFX("Select", 1.0f);
@@ -591,6 +593,7 @@ bool GameBoard::HandleMouseClickDownAt(const int& x, const int& y)
 				}
 				else
 				{
+					printf("Jewel was already selected. Cancelling.\n");
 					// jewel was already selected
 					nextJewel->HandleMouseClickDownAt(x, y);
 					// clicking on an already selected jewel...
@@ -612,11 +615,12 @@ bool GameBoard::HandleMouseClickDownAt(const int& x, const int& y)
 
 bool GameBoard::HandleMouseHoverAt(const int& x, const int& y)
 {
-	AOJewel* jewel = GetJewelAt(x, y);
-	if (jewel != NULL && !m_bPauseEnabled)
+	AOJewel* pJewel = GetJewelAt(x, y);
+	if (pJewel != nullptr && !m_bPauseEnabled)
 	{
-		jewel->HandleMouseHoverAt(x, y);
+		pJewel->HandleMouseHoverAt(x, y);
 	}
+
 
 	// do not show hand cursor by default
 	MouseCursor::Get()->SetShowHand(false);
@@ -645,8 +649,8 @@ Rect GameBoard::GetBoardRect()
 {
 	Rect retVal = { MAIN_BOARD_OFFSET_X,
 					MAIN_BOARD_OFFSET_Y,
-					MAIN_BOARD_OFFSET_X + (JEWEL_SIZE * 8),
-					MAIN_BOARD_OFFSET_Y + (JEWEL_SIZE * 8) };
+					MAIN_BOARD_OFFSET_X + (JEWEL_SPACING * 8),
+					MAIN_BOARD_OFFSET_Y + (JEWEL_SPACING * 8) };
 
 	return retVal;
 }

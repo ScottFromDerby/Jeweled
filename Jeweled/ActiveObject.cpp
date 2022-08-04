@@ -19,8 +19,9 @@ const VEC2 VEC2_Zero = { 0, 0 };
 ActiveObject::ActiveObject(const VEC2& pos, const VEC2& size, const std::string& spriteID, const std::string& spriteIDHover, const std::string& spriteIDClicked, const std::string& spriteIDSelected) :
 	m_pos(pos),
 	m_size(size),
-	m_isClickable(false),
-	m_isSelected(false),
+	m_bIsClickable(false),
+	m_bIsSelected(false),
+	m_bIsVisible(false),
 	m_spriteIDBasic(spriteID),
 	m_spriteIDHover(spriteIDHover),
 	m_spriteIDClicked(spriteIDClicked),

@@ -12,6 +12,8 @@ class AOButton;
 
 const unsigned short BOARD_SIZE = 8;
 const unsigned short JEWEL_SIZE = 52;
+const unsigned short JEWEL_SPACING = 51;
+const unsigned short SELECTION_CURSOR_SIZE = 52;
 const unsigned short NUM_JEWEL_TYPES = 7;
 const unsigned short MAIN_BOARD_OFFSET_X = 200;
 const unsigned short MAIN_BOARD_OFFSET_Y = 16;
@@ -77,7 +79,9 @@ private: //variables
 	std::string m_gemSpriteSheetID;
 	std::string m_backgroundTileSheetID;
 	
-	AOJewel* m_board[BOARD_SIZE][BOARD_SIZE]; // uses AOJewel* references
+	AOJewel* m_board[BOARD_SIZE][BOARD_SIZE];
+
+	int m_numNewJewelsThisCascadePerColumn[BOARD_SIZE];
 
 	AOJewel* m_selectedJewel; 
 	AOJewel* m_secondJewel;

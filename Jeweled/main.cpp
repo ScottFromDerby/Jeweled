@@ -48,8 +48,6 @@ int init()
 {
 	LOG("Init()");
 
-	//	
-
 	//	Load/Init Renderer
 	SDLRenderer* pRenderer = SDLRenderer::Get();
 	pRenderer->Init(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_FULLSCREEN, WINDOW_TITLE, ICON_FILE_NAME);
@@ -60,7 +58,7 @@ int init()
 	//	Load in some shared board sprites
 	pRenderer->AddImage("..\\Resources\\titlescreen6.jpg", "TitleScreen");
 	pRenderer->AddImage("..\\Resources\\alphaback1.tga", "WindowBase");
-	pRenderer->AddImage("..\\Resources\\checkertextures2.tga", "BackgroundTileSheet");
+	pRenderer->AddImage("..\\Resources\\checkertextures2.png", "BackgroundTileSheet");
 	pRenderer->AddImage("..\\Resources\\target1.tga", "SelectionCursor");
 	pRenderer->AddImage("..\\Resources\\JewelSheet.tga", "JewelSpriteSheet");
 	pRenderer->AddImage("..\\Resources\\dialogbox360-200.tga", "DialogBox");
@@ -145,23 +143,76 @@ int SDL_main(int argc, char* argv[])
 	//SDL_Renderer* pRenderer = SDL_CreateRenderer(pWnd, -1, 0);
 	//
 	////SDL_Surface* pSurface = IMG_Load("..\\Resources\\titlescreen6.jpg");
-	//SDL_Surface* pSurface = IMG_Load("..\\Resources\\_afont1.gif");
-	//SDL_SetColorKey(pSurface, SDL_TRUE, 15);
+	////SDL_Surface* pSurface = IMG_Load("..\\Resources\\_afont1.gif");
+	////SDL_SetColorKey(pSurface, SDL_TRUE, 15);
 	//
-	//SDL_Texture* pTexture = SDL_CreateTextureFromSurface(pRenderer, pSurface);
+	//SDL_Texture* pMainBackground = SDL_CreateTexture(pRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, 640, 480);
+	//
+	//SDL_Surface* pSurface = IMG_Load("..\\Resources\\checkertextures2.tga");
+	//SDL_Texture* pTileTextureSheet = SDL_CreateTextureFromSurface(pRenderer, pSurface);
+	//
+	//SDL_Rect src1 = { 0, 0, JEWEL_SIZE, JEWEL_SIZE };
+	//SDL_Rect src2 = { JEWEL_SIZE, 0, JEWEL_SIZE, JEWEL_SIZE };
+	//
+	//SDL_Texture* pTile1 = SDL_CreateTexture(pRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, JEWEL_SIZE, JEWEL_SIZE);
+	//SDL_SetRenderTarget(pRenderer, pTile1);
+	//SDL_RenderCopy(pRenderer, pTileTextureSheet, &src1, nullptr);
+	//
+	//SDL_Texture* pTile2 = SDL_CreateTexture(pRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, JEWEL_SIZE, JEWEL_SIZE);
+	//SDL_SetRenderTarget(pRenderer, pTile2);
+	//SDL_RenderCopy(pRenderer, pTileTextureSheet, &src2, nullptr);
+	//
+	//SDL_SetRenderTarget(pRenderer, nullptr);
+	//
+	////	Copy squares 
+	////int iWidth1 = 0, iHeight1 = 0, iWidth2 = 0, iHeight2 = 0;
+	////SDL_QueryTexture(pTile1, nullptr, nullptr, &iWidth1, &iHeight1);
+	////SDL_QueryTexture(pTile2, nullptr, nullptr, &iWidth2, &iHeight2);
+	////assert(iWidth1 == iWidth2);
+	////assert(iWidth2 == iHeight2);
+	////
+	////int iTargetWidth = 0, iTargetHeight = 0;
+	////SDL_QueryTexture(pMainBackground, nullptr, nullptr, &iTargetWidth, &iTargetHeight);
+	////
+	////const Sint16 xReps = (Sint16)floor((double)(iTargetWidth / iWidth1)) + 1;
+	////const Sint16 yReps = (Sint16)floor((double)(iTargetHeight / iHeight1)) + 1;
+	////
+	////SDL_SetRenderTarget(pRenderer, pMainBackground);
+	////for (Sint16 i = 0; i < xReps; ++i)
+	////{
+	////	for (Sint16 j = 0; j < yReps; ++j)
+	////	{
+	////		SDL_Rect destRect = { static_cast<Sint16>(i * iWidth1), static_cast<Sint16>(j * iHeight1), static_cast<Uint16>(iWidth1), static_cast<Uint16>(iHeight1) };
+	////		SDL_RenderCopy(pRenderer, ((i + j) % 2 == 0) ? pTile1 : pTile2, nullptr, &destRect);
+	////	}
+	////}
+	////SDL_SetRenderTarget(pRenderer, nullptr);
+	//
+	////SDL_Texture* pTexture = SDL_CreateTextureFromSurface(pRenderer, pSurface);
 	//while(true)
 	//{
 	//	SDL_PumpEvents();
 	//
+	//	SDL_SetRenderTarget(pRenderer, nullptr);
+	//
 	//	SDL_SetRenderDrawColor(pRenderer, 255, 0, 255, 127);
 	//	SDL_RenderClear(pRenderer);
 	//
-	//	SDL_Rect rcDest = { 0, 0, pSurface->w, pSurface->h};
-	//	SDL_RenderCopy(pRenderer, pTexture, nullptr, &rcDest);
+	//	//
+	//	//SDL_Rect rcDest = { 0, 0, pSurface->w, pSurface->h};
+	//	//SDL_RenderCopy(pRenderer, pTexture, nullptr, &rcDest);
+	//	//SDL_RenderCopy(pRenderer, pTile1, nullptr, nullptr);
+	//
+	//	SDL_RenderCopy(pRenderer, pMainBackground, nullptr, nullptr);
+	//
 	//	SDL_RenderPresent(pRenderer);
 	//
 	//	SDL_Delay(50);
 	//}
+
+
+
+
 
 	//	TODO: Attempt load resources from Bejeweled Deluxe Demo
 	//FILE* pFile = nullptr;
@@ -204,6 +255,8 @@ int SDL_main(int argc, char* argv[])
 		}
 
 		SDL_PumpEvents();
+
+		const Uint32 WindowFlags = SDL_GetWindowFlags(SDLRenderer::Get()->GetMainWindow());
 
 		// Check for window messages (e.g. clicking [X])
 		SDL_Event ev;
@@ -295,7 +348,10 @@ int SDL_main(int argc, char* argv[])
 			{
 				if (g_currentGameState == GS_INGAME)
 				{
-					g_pGameBoard->HandleMouseHoverAt(ev.motion.x, ev.motion.y);
+					if (WindowFlags & SDL_WINDOW_INPUT_FOCUS)
+					{
+						g_pGameBoard->HandleMouseHoverAt(ev.motion.x, ev.motion.y);
+					}
 				}
 			}
 			default:
@@ -307,7 +363,7 @@ int SDL_main(int argc, char* argv[])
 		//  game process any potential mouse hovering.
 		if (g_currentGameState == GS_INGAME)
 		{
-			if (SDL_GetWindowFlags(SDL_GL_GetCurrentWindow()) & SDL_WINDOW_MOUSE_FOCUS)
+			if (WindowFlags & SDL_WINDOW_INPUT_FOCUS)
 			{
 				int mouseX, mouseY; SDL_GetMouseState(&mouseX, &mouseY);
 				g_pGameBoard->HandleMouseHoverAt(mouseX, mouseY);
@@ -319,14 +375,14 @@ int SDL_main(int argc, char* argv[])
 		// Check to see whether app deserves focus or not, and shift
 		//  accordingly if necessary
 		static bool appHasFocus = false;
-		if (!(SDL_GetWindowFlags(SDL_GL_GetCurrentWindow()) & SDL_WINDOW_MOUSE_FOCUS) && appHasFocus)
+		if (!(WindowFlags & SDL_WINDOW_INPUT_FOCUS) && appHasFocus)
 		{
 			//printf("App DOES NOT HAVE FOCUS...\n");
 			//g_gameBoard->EngagePauseMode();
 			SDLAudio::Get()->SetGlobalVolume(0.0f);
 			appHasFocus = false;
 		}
-		if ((SDL_GetWindowFlags(SDL_GL_GetCurrentWindow()) & SDL_WINDOW_MOUSE_FOCUS) && !appHasFocus)
+		if ((WindowFlags & SDL_WINDOW_INPUT_FOCUS) && !appHasFocus)
 		{
 			//printf("App SHOULD HAVE FOCUS...\n");
 			SDLAudio::Get()->SetGlobalVolume(GAME_DEFAULT_VOLUME);

@@ -38,7 +38,6 @@ public:
 
 public:
 	virtual const std::string& GetDefaultSpriteID()		{ return m_spriteIDBasic; }
-	//virtual void SetDefaultSpriteSheetID(int i) { m_spriteIDBasic = i; }
 
 	virtual long GetXPos() { return m_pos.x; }
 	virtual long GetYPos() { return m_pos.y; }
@@ -47,12 +46,12 @@ public:
 	virtual bool SetPos(int x, int y);
 	virtual bool SetPosRelative(int x, int y);
 
-	virtual bool IsClickable() { return m_isClickable; };
-	virtual bool IsSelected() { return m_isSelected; };
-	virtual bool IsVisible() { return m_isVisible; };
-	virtual void SetClickable(bool clickable) { m_isClickable = clickable; };
-	virtual void SetSelected(bool selected) { m_isSelected = selected; };
-	virtual void SetVisibility(bool visible) { m_isVisible = visible; };
+	virtual bool IsClickable() { return m_bIsClickable; };
+	virtual bool IsSelected() { return m_bIsSelected; };
+	virtual bool IsVisible() { return m_bIsVisible; };
+	virtual void SetClickable(bool clickable) { m_bIsClickable = clickable; };
+	virtual void SetSelected(bool selected) { m_bIsSelected = selected; };
+	virtual void SetVisibility(bool visible) { m_bIsVisible = visible; };
 
 	virtual const char* GetType() = 0; // pure virtual
 	virtual bool HandleMouseClickDownAt(int x, int y) = 0; // pure virtual
@@ -65,9 +64,9 @@ protected:
 	Rect m_relativeClickableArea;
 	VEC2 m_size;
 
-	bool m_isClickable;
-	bool m_isSelected;
-	bool m_isVisible;
+	bool m_bIsClickable;
+	bool m_bIsSelected;
+	bool m_bIsVisible;
 
 	std::string m_spriteIDBasic;
 	std::string m_spriteIDHover;

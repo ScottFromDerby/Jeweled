@@ -10,7 +10,6 @@ class SDLRenderer
 {
 private:
 	SDLRenderer();
-	~SDLRenderer();
 
 public:
 	//	Singleton
@@ -21,7 +20,7 @@ public:
 	void Shutdown();
 
 	unsigned int AddImage(const std::string& imagePath, const std::string& refName);
-	SDL_Texture* GetTexture(const std::string& spriteID)				{ return m_textureManager[spriteID]; }
+	SDL_Texture* GetTexture(const std::string& spriteID);
 
 	void StartDrawing();
 	void EndDrawing();
@@ -34,7 +33,8 @@ public:
 	void DrawPartialTexture(const std::string& surfaceID, SDL_Rect* rcSrc, Sint16 iDestX, Sint16 iDestY, Uint16 uWidth, Uint16 uHeight);
 	void DrawPartialTexture(SDL_Texture* pTex, SDL_Rect* rcSrc, Sint16 iDestX, Sint16 iDestY, Uint16 uWidth, Uint16 uHeight);
 
-	static void GenerateTiledTexture(SDL_Texture* pTextureOut, SDL_Texture* pInTile1, SDL_Texture* pInTile2);
+	void GenerateTiledTexture(SDL_Texture* pTextureOut, SDL_Texture* pTileSheet, int index1, int index2);
+	void GenerateTiledTexture(SDL_Texture* pTextureOut, SDL_Texture* pInTile1, SDL_Texture* pInTile2);
 
 	static void AdjustPixels(SDL_Surface* out, float rAdj, float gAdj, float bAdj);
 

@@ -47,6 +47,13 @@ SDLRenderer* SDLRenderer::Get()
 	return pInst;
 }
 
+SDL_Texture* SDLRenderer::GetTexture(const std::string& spriteID)
+{ 
+	SDL_Texture* pTexture = m_textureManager[spriteID];
+	SDL_assert(pTexture != nullptr);
+	return pTexture;
+}
+
 int SDLRenderer::Init(int width, int height, bool bFullscreen, const std::string& windowTitle, const std::string& iconFile)
 {
 	printf("SDLRenderer::Init()\n");
@@ -150,6 +157,8 @@ void SDLRenderer::DrawStr(const std::string& fontID, Sint16 x, Sint16 y, const s
 
 unsigned int SDLRenderer::AddImage(const std::string& imagePath, const std::string& refName)
 {
+	SDL_assert(m_pRenderer != nullptr);
+
 	printf("SDLRenderer::AddImage(%s)\n", refName.c_str());
 	SDL_Surface* pNewSurface = IMG_Load(imagePath.c_str());
 	assert(pNewSurface);
@@ -194,6 +203,32 @@ void SDLRenderer::DrawPartialTexture(SDL_Texture* pTex, SDL_Rect* rcSrc, Sint16 
 	SDL_RenderCopy(m_pRenderer, pTex, rcSrc, &rcDest);
 }
 
+void SDLRenderer::GenerateTiledTexture(SDL_Texture* pTextureOut, SDL_Texture* pTileSheet, int index1, int index2)
+{
+	SDL_SetRenderTarget(m_pRenderer, pTextureOut);
+
+	int iTargetWidth = 0, iTargetHeight = 0, iTilesheetWidth = 0, iTilesheetHeight = 0;
+	SDL_QueryTexture(pTextureOut, nullptr, nullptr, &iTargetWidth, &iTargetHeight);
+	SDL_QueryTexture(pTileSheet, nullptr, nullptr, &iTilesheetWidth, &iTilesheetHeight);
+
+	const Sint16 xReps = (Sint16)floor((double)(iTargetWidth / iTilesheetHeight)) + 1;
+	const Sint16 yReps = (Sint16)floor((double)(iTargetHeight / iTilesheetHeight)) + 1;
+	
+	SDL_Rect rcTile1 = { 0, 0, iTilesheetHeight, iTilesheetHeight };
+	SDL_Rect rcTile2 = { iTilesheetHeight, 0, iTilesheetHeight, iTilesheetHeight };
+	
+	for (Sint16 i = 0; i < xReps; ++i)
+	{
+		for (Sint16 j = 0; j < yReps; ++j)
+		{
+			SDL_Rect destRect = { i * iTilesheetHeight, j * iTilesheetHeight, iTilesheetHeight, iTilesheetHeight };
+			SDL_RenderCopy(m_pRenderer, pTileSheet,((i + j) % 2 == 0) ? &rcTile1: &rcTile2, &destRect);
+		}
+	}
+
+	SDL_SetRenderTarget(m_pRenderer, nullptr);
+}
+
 void SDLRenderer::GenerateTiledTexture(SDL_Texture* pTextureOut, SDL_Texture* pInTile1, SDL_Texture* pInTile2)
 {
 	//	Double checking!
@@ -218,7 +253,7 @@ void SDLRenderer::GenerateTiledTexture(SDL_Texture* pTextureOut, SDL_Texture* pI
 		for (Sint16 j = 0; j < yReps; ++j)
 		{
 			SDL_Rect destRect = { static_cast<Sint16>(i * iWidth1), static_cast<Sint16>(j * iHeight1), static_cast<Uint16>(iWidth1), static_cast<Uint16>(iHeight1) };
-			SDL_RenderCopy(Get()->m_pRenderer, ((i + j) % 2 == 0) ? pInTile1 : pInTile2, nullptr, &destRect);
+			SDL_RenderCopy(m_pRenderer, ((i + j) % 2 == 0) ? pInTile1 : pInTile2, nullptr, &destRect);
 		}
 	}
 }

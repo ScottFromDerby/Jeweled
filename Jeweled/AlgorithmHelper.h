@@ -19,7 +19,7 @@ public:
 
 	static void SwapJewels(AOJewel* pFirst, AOJewel* pSecond, AOJewel* board[8][8]);
 
-	static void RemoveAndSpawn(AOJewel* pJewel, AOJewel* board[8][8]);
+	static void RemoveAndSpawn(AOJewel* pJewel, AOJewel* board[8][8], int numPriorCascadesThisColumn);
 };
 
 // Assert that there must be how many moves available at the start of the game:

@@ -55,7 +55,7 @@ void AlgorithmHelper::GenerateNewBoard(AOJewel* board[8][8], bool generateDropIn
 			for (int j = 0; j < BOARD_SIZE; ++j)
 			{
 				// move 8 jewel (spaces) up
-				board[i][j]->SetPosRelative(0, (int)(JEWEL_SIZE * -8));
+				board[i][j]->SetPosRelative(0, (int)((JEWEL_SIZE + 1) * -8));
 				// touch - to start dropping
 				board[i][j]->SetIsDropping(true);
 			}
@@ -471,12 +471,12 @@ void AlgorithmHelper::SwapJewels(AOJewel* pFirst, AOJewel* pSecond, AOJewel* boa
 	printf("swapped [%d][%d] and [%d][%d]\n", firstX, firstY, secondX, secondY);
 }
 
-void AlgorithmHelper::RemoveAndSpawn(AOJewel* jewel, AOJewel* board[8][8])
+void AlgorithmHelper::RemoveAndSpawn(AOJewel* jewel, AOJewel* board[8][8], int numPriorCascadesThisColumn)
 {
 	// This should be called when a jewel has completed it's 'dying' animation
 	//  and is ready to be respawned at the top of the board.
 	// All members of the board directly above this jewel need to be informed
-	//  that they should aim to drop a further 52 pixels.
+	//  that they should aim to drop a further 51 pixels.
 	// This algorithm has the responsibility of doing all the above for this
 	//  one jewel.
 
@@ -515,19 +515,10 @@ void AlgorithmHelper::RemoveAndSpawn(AOJewel* jewel, AOJewel* board[8][8])
 	// 3. reactivate dead jewel
 	jewel->SetIsDead(false);
 
-	// 4. set new position for jewel (52 above the highest jewel!)
-	int targetYHeight = 999;
-	//for ( int i = 0; i < 8; ++i )
-	//{
-	//	if ( board[col][i]->GetYPos() < targetYHeight )
-	//		targetYHeight = board[col][i]->GetYPos();
-	//}
-	//printf("Highest jewel on this column is at y:%d\n", targetYHeight );
-	//targetYHeight -= JEWEL_SIZE;
+	constexpr const int EXTRA_SPACING = 30;
 
-	// Hack to get this working! TODO: This sets the new location for spawn-in
-	//  jewels to be a jewel above the board
-	targetYHeight = MAIN_BOARD_OFFSET_Y - JEWEL_SIZE;
+	// 4. set new position for jewel
+	int targetYHeight = MAIN_BOARD_OFFSET_Y - ((JEWEL_SPACING + EXTRA_SPACING) * (numPriorCascadesThisColumn + 1));
 
 	printf(" Jewel move: (y:%d)->(y:%d) \n", jewel->GetYPos(), targetYHeight);
 	jewel->SetPos(jewel->GetXPos(), targetYHeight);
@@ -539,7 +530,8 @@ void AlgorithmHelper::RemoveAndSpawn(AOJewel* jewel, AOJewel* board[8][8])
 	{
 		// calc new drop target
 		printf("For jewel at [%d][%d], ", col, i);
-		board[col][i]->SetDropTargetRelative(JEWEL_SIZE);
+		//board[col][i]->SetDropTargetRelative(JEWEL_SPACING);
+		board[col][i]->SetDropTarget(MAIN_BOARD_OFFSET_Y + (JEWEL_SPACING*i));
 	}
 
 #ifdef DEBUG
@@ -574,8 +566,8 @@ void AlgorithmHelper::EstimateJewelBoardLocation(AOJewel* jewel, int& x, int& y)
 	int xLoc = jewel->GetXPos() - MAIN_BOARD_OFFSET_X;
 	int yLoc = jewel->GetYPos() - MAIN_BOARD_OFFSET_Y;
 
-	xLoc = (int)(xLoc / JEWEL_SIZE);
-	yLoc = (int)(yLoc / JEWEL_SIZE);
+	xLoc = (int)(xLoc / (JEWEL_SIZE + 1));
+	yLoc = (int)(yLoc / (JEWEL_SIZE + 1));
 
 	x = xLoc;
 	y = yLoc;

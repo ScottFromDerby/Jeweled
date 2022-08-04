@@ -67,7 +67,7 @@ void SDLAudio::PlaySFX(const std::string& soundID, float volume)
 {
 	if (!IsSoundPlaying(soundID))
 	{
-		printf("SDLAudio::PlaySound(%s)\n", soundID.c_str());
+		//printf("SDLAudio::PlaySound(%s)\n", soundID.c_str());
 
 		// one-shot audio (FAF)
 		if (m_soundEffectFiles[soundID] == NULL)
