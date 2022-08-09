@@ -1,5 +1,4 @@
 #include "SDLRenderer.h"
-#include "main.h"
 
 #include "SDL.h"
 #include "SDL_ttf.h"
@@ -21,18 +20,18 @@
 ////////////////////////////////////////////////////
 
 SDLRenderer::SDLRenderer()
- :	m_pMainWindow(nullptr),
+	: m_pMainWindow(nullptr),
 	m_pRenderer(nullptr)
 {
 }
 
 void SDLRenderer::Shutdown()
 {
-	for (std::pair<std::string, SDL_Surface*> Surface : m_surfaceManager)
-	{
-		SDL_FreeSurface(Surface.second);
-	}
-	m_surfaceManager.clear();
+	//for (std::pair<std::string, SDL_Surface*> Surface : m_surfaceManager)
+	//{
+	//	SDL_FreeSurface(Surface.second);
+	//}
+	//m_surfaceManager.clear();
 	for (std::pair<std::string, SDL_Texture*> Texture : m_textureManager)
 	{
 		SDL_DestroyTexture(Texture.second);
@@ -48,7 +47,7 @@ SDLRenderer* SDLRenderer::Get()
 }
 
 SDL_Texture* SDLRenderer::GetTexture(const std::string& spriteID)
-{ 
+{
 	SDL_Texture* pTexture = m_textureManager[spriteID];
 	SDL_assert(pTexture != nullptr);
 	return pTexture;
@@ -81,7 +80,7 @@ int SDLRenderer::Init(int width, int height, bool bFullscreen, const std::string
 
 	m_pRenderer = SDL_CreateRenderer(m_pMainWindow, -1, 0);
 	assert(m_pRenderer != nullptr);
-	
+
 	m_pFontRenderingBufferTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 1024, 1024);
 
 	SDL_SetWindowIcon(m_pMainWindow, IMG_Load(iconFile.c_str()));
@@ -111,8 +110,8 @@ void SDLRenderer::DrawStr(const std::string& fontID, Sint16 x, Sint16 y, const s
 
 	int xPos = x;
 
-	SDL_SetTextureColorMod(pFontTexture, (colour >> 16) & 0xff, (colour >> 8) & 0xff, colour & 0xff );
-	SDL_SetTextureAlphaMod(pFontTexture, 255);
+	SDL_SetTextureColorMod(pFontTexture, (colour >> 16) & 0xff, (colour >> 8) & 0xff, colour & 0xff);
+	SDL_SetTextureAlphaMod(pFontTexture, (colour >> 24) & 0xff);
 
 	int fontHeight = m_fontHeights[fontID];
 
@@ -122,8 +121,8 @@ void SDLRenderer::DrawStr(const std::string& fontID, Sint16 x, Sint16 y, const s
 		if (iter != Offsets.end())
 		{
 			const FontOffsetData& data = iter->second;
-			
-			if(data.uXOffset >= 0 )
+
+			if (data.uXOffset >= 0)
 			{
 				SDL_Rect rcDest = { xPos, y, static_cast<Uint16>(data.uWidth), fontHeight };
 				SDL_Rect rcSource = { data.uXOffset, 0, static_cast<Uint16>(data.uWidth), fontHeight };
@@ -155,7 +154,7 @@ void SDLRenderer::DrawStr(const std::string& fontID, Sint16 x, Sint16 y, const s
 	//}
 }
 
-unsigned int SDLRenderer::AddImage(const std::string& imagePath, const std::string& refName)
+bool SDLRenderer::AddImage(const std::string& imagePath, const std::string& refName)
 {
 	SDL_assert(m_pRenderer != nullptr);
 
@@ -163,22 +162,38 @@ unsigned int SDLRenderer::AddImage(const std::string& imagePath, const std::stri
 	SDL_Surface* pNewSurface = IMG_Load(imagePath.c_str());
 	assert(pNewSurface);
 
-	if( refName.compare("AFont1") == 0 )
+	if (refName.compare("AFont1") == 0)
 	{
 		SDL_SetColorKey(pNewSurface, SDL_TRUE, 15);
 		m_fontHeights["AFont1"] = pNewSurface->h;
-	} else if (refName.compare("MainFont") == 0)
+	}
+	else if (refName.compare("MainFont") == 0)
 	{
 		SDL_SetColorKey(pNewSurface, SDL_TRUE, 15);
 		m_fontHeights["MainFont"] = pNewSurface->h;
 	}
+	else if (refName.compare("ScoreFont") == 0)
+	{
+		//SDL_SetColorKey(pNewSurface, SDL_TRUE, 15);
+		m_fontHeights["ScoreFont"] = pNewSurface->h;
+	}
+	else if (refName.compare("ScorePopupFont") == 0)
+	{
+		//SDL_SetColorKey(pNewSurface, SDL_TRUE, 15);
+		m_fontHeights["ScorePopupFont"] = pNewSurface->h;
+	}
+	else if (refName.compare("OverFont") == 0)
+	{
+		SDL_SetColorKey(pNewSurface, SDL_TRUE, 1);
+		m_fontHeights["OverFont"] = pNewSurface->h;
+	}
 
-	m_surfaceManager[refName] = pNewSurface;
+	//m_surfaceManager[refName] = pNewSurface;
 	m_textureManager[refName] = SDL_CreateTextureFromSurface(m_pRenderer, pNewSurface);
-	
-	// returning size-1 here in order to correlate with image ID
-	//  (which starts at 0), as size() starts at 1.
-	return (unsigned int)m_surfaceManager.size() - 1;
+
+	SDL_FreeSurface(pNewSurface);
+
+	return m_textureManager[refName] != nullptr;
 }
 
 void SDLRenderer::DrawTexture(const std::string& surfaceName, Sint16 iDestX, Sint16 iDestY, Uint16 uWidth, Uint16 uHeight)
@@ -213,16 +228,16 @@ void SDLRenderer::GenerateTiledTexture(SDL_Texture* pTextureOut, SDL_Texture* pT
 
 	const Sint16 xReps = (Sint16)floor((double)(iTargetWidth / iTilesheetHeight)) + 1;
 	const Sint16 yReps = (Sint16)floor((double)(iTargetHeight / iTilesheetHeight)) + 1;
-	
+
 	SDL_Rect rcTile1 = { 0, 0, iTilesheetHeight, iTilesheetHeight };
 	SDL_Rect rcTile2 = { iTilesheetHeight, 0, iTilesheetHeight, iTilesheetHeight };
-	
+
 	for (Sint16 i = 0; i < xReps; ++i)
 	{
 		for (Sint16 j = 0; j < yReps; ++j)
 		{
 			SDL_Rect destRect = { i * iTilesheetHeight, j * iTilesheetHeight, iTilesheetHeight, iTilesheetHeight };
-			SDL_RenderCopy(m_pRenderer, pTileSheet,((i + j) % 2 == 0) ? &rcTile1: &rcTile2, &destRect);
+			SDL_RenderCopy(m_pRenderer, pTileSheet, ((i + j) % 2 == 0) ? &rcTile1 : &rcTile2, &destRect);
 		}
 	}
 
@@ -283,19 +298,164 @@ void SDLRenderer::AdjustPixels(SDL_Surface* out, float rAdj, float gAdj, float b
 	}
 }
 
-//void SDLRenderer::AddFont(const std::string& fontRef, const std::string& fontFilename, int pointSize)
-//{
-//	//printf("SDLRenderer::AddFont(%s)\n", fontRef.c_str());
-//	//TTF_Font* pNewFont = TTF_OpenFont(fontFilename.c_str(), pointSize);
-//	//if (pNewFont == nullptr)
-//	//{
-//	//	MessageBox(nullptr, TEXT("Could not load font!\r\nCheck resources folder!"), SDL_GetError(), MB_ICONERROR);
-//	//	SDL_Quit();
-//	//	return;
-//	//}
-//
-//	//m_fontManager[fontRef] = pNewFont;
-//}
+void SDLRenderer::DrawRect(const SDL_Rect* rc, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+{
+	SDL_SetRenderDrawColor(m_pRenderer, r, g, b, a);
+	SDL_RenderDrawRect(m_pRenderer, rc);
+}
+
+void SDLRenderer::DrawLine(int x1, int y1, int x2, int y2, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+{
+	SDL_SetRenderDrawColor(m_pRenderer, r, g, b, a);
+	SDL_RenderDrawLine(m_pRenderer, x1, y1, x2, y2);
+}
+
+void SDLRenderer::DrawFilledRect(const SDL_Rect* rc, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+{
+	SDL_SetRenderDrawColor(m_pRenderer, r, g, b, a);
+	SDL_RenderFillRect(m_pRenderer, rc);
+}
+
+void SDLRenderer::ParseSimpleFont(char* buffer, const std::string& fontID)
+{
+	std::vector<char> CharList;
+	std::vector<long> WidthList;
+
+	char* pIter = &buffer[0];
+
+	int defaultSpacing = strtol(pIter, &pIter, 10);
+	int charHeight = strtol(pIter, &pIter, 10);
+
+	m_fontHeights[fontID] = charHeight;	//	Nope; this is ignored!
+
+	while (pIter != nullptr && *pIter != '\0')
+	{
+		if (pIter != nullptr && (*pIter == '\r' || *pIter == '\n' || *pIter == ' '))
+		{
+			pIter++;
+			continue;
+		}
+
+		char* nextChar = strtok_s(pIter, " ", &pIter);
+		if (pIter == nullptr)
+		{
+			continue;
+		}
+		int iWidth = strtol(pIter, &pIter, 10);
+
+		CharList.push_back(*nextChar);
+		WidthList.push_back(iWidth);
+	}
+
+	assert(CharList.size() == WidthList.size());
+
+	FontOffsetMap& OffsetMap = m_fontXOffsets[fontID];
+
+	int iOffset = 0;
+	for (size_t i = 0; i < CharList.size(); ++i)
+	{
+		char nextChar = CharList[i];
+		OffsetMap[nextChar].uWidth = static_cast<Uint16>(WidthList[i]);
+		OffsetMap[nextChar].uXOffset = nextChar == ' ' ? -1 : iOffset;
+		iOffset += WidthList[i];
+	}
+}
+
+void SDLRenderer::ParseComplexFont(char* buffer, const std::string& fontID)
+{
+	std::vector<char> CharList;
+	std::vector<long> WidthList;
+
+	char* pIter = &buffer[0];
+	while (*pIter != '\0')
+	{
+		const char* STR_CHARLIST = "Define CharList";
+		const char* STR_WIDTHLIST = "Define WidthList";
+		const char* STR_LAYERSETCHARWIDTHS = "LayerSetCharWidths";
+
+		if (strncmp(STR_CHARLIST, pIter, strlen(STR_CHARLIST) - 1) == 0)
+			//if (strcmpi("Define CharList\r\n", pIter) == 0)
+		{
+			pIter += strlen(STR_CHARLIST);
+
+			//	Pull in chars to parse
+			char nextChar = *pIter;
+			while (nextChar != ';' && nextChar != '\0')
+			{
+				if (nextChar == '\'' || nextChar == '\"')
+				{
+					//	Expect symbol next
+					char foundChar = *++pIter;
+					CharList.push_back(foundChar);
+
+					nextChar = *++pIter;	//	Advance past closing '
+					//assert(nextChar == '\'' || nextChar == '\"');
+					if (nextChar == '\\')
+					{
+						nextChar = *++pIter;	//	Advance past closing '
+					}
+				}
+				nextChar = *++pIter;
+			}
+		}
+
+		if (strncmp(STR_WIDTHLIST, pIter, strlen(STR_WIDTHLIST) - 1) == 0)
+		{
+			pIter += strlen(STR_WIDTHLIST);
+
+			//	Pull in chars to parse
+			char nextChar = *pIter;
+			while (nextChar != ';' && nextChar != '\0')
+			{
+				if (nextChar >= '0' && nextChar <= '9')
+				{
+					//	Reading a numeral
+					long value = strtol(pIter, &pIter, 10);
+					WidthList.push_back(value);
+				}
+				nextChar = *++pIter;
+			}
+		}
+
+		if (strncmp(STR_LAYERSETCHARWIDTHS, pIter, strlen(STR_LAYERSETCHARWIDTHS) - 1) == 0)
+		{
+			pIter += strlen(STR_LAYERSETCHARWIDTHS);
+
+			char nextChar = *pIter;
+			while (nextChar != ';' && nextChar != '\0')
+			{
+				if (nextChar >= '0' && nextChar <= '9')
+				{
+					//	Reading a numeral
+					long value = strtol(pIter, &pIter, 10);
+
+					//	This is the space character
+					CharList.push_back(' ');
+					WidthList.push_back(value);
+
+					nextChar = *++pIter;	//	Advance past closing '
+				}
+
+				nextChar = *++pIter;
+			}
+		}
+
+		++pIter;
+	}
+
+	assert(CharList.size() == WidthList.size());
+
+	FontOffsetMap& OffsetMap = m_fontXOffsets[fontID];
+
+	int iOffset = 0;
+	for (size_t i = 0; i < CharList.size(); ++i)
+	{
+		char nextChar = CharList[i];
+		OffsetMap[nextChar].uWidth = static_cast<Uint16>(WidthList[i]);
+		OffsetMap[nextChar].uXOffset = nextChar == ' ' ? -1 : iOffset;
+		iOffset += WidthList[i];
+	}
+}
 
 void SDLRenderer::ParseFontData(const char* FontDataFile, const std::string& fontID)
 {
@@ -309,107 +469,73 @@ void SDLRenderer::ParseFontData(const char* FontDataFile, const std::string& fon
 		long fileSize = ftell(pFile);
 		rewind(pFile);
 
-		buffer = new char[fileSize];
+		buffer = new char[fileSize + 1];
+		buffer[fileSize] = '\0';	//	Terminate safely
 
 		fread(buffer, fileSize, 1, pFile);
 		fclose(pFile);
 
-		std::vector<char> CharList;
-		std::vector<long> WidthList;
-
-		char* pIter = &buffer[0];
-		while(*pIter != '\0')
+		if (buffer[0] >= '0' && buffer[0] <= '9')
 		{
-			const char* STR_CHARLIST = "Define CharList";
-			const char* STR_WIDTHLIST = "Define WidthList";
-			const char* STR_LAYERSETCHARWIDTHS = "LayerSetCharWidths";
-
-			if (strncmp(STR_CHARLIST, pIter, strlen(STR_CHARLIST) - 1) == 0)
-			//if (strcmpi("Define CharList\r\n", pIter) == 0)
-			{
-				pIter += strlen(STR_CHARLIST);
-
-				//	Pull in chars to parse
-				char nextChar = *pIter;
-				while (nextChar != ';' && nextChar != '\0')
-				{
-					if (nextChar == '\'' || nextChar == '\"')
-					{
-						//	Expect symbol next
-						char foundChar = *++pIter;
-						CharList.push_back(foundChar);
-
-						nextChar = *++pIter;	//	Advance past closing '
-						//assert(nextChar == '\'' || nextChar == '\"');
-						if( nextChar == '\\' )
-						{
-							nextChar = *++pIter;	//	Advance past closing '
-						}
-					}
-					nextChar = *++pIter;
-				}
-			}
-
-			if (strncmp(STR_WIDTHLIST, pIter, strlen(STR_WIDTHLIST) - 1) == 0)
-			{
-				pIter += strlen(STR_WIDTHLIST);
-
-				//	Pull in chars to parse
-				char nextChar = *pIter;
-				while (nextChar != ';' && nextChar != '\0')
-				{
-					if (nextChar >= '0' && nextChar <= '9')
-					{
-						//	Reading a numeral
-						long value = strtol(pIter, &pIter, 10);
-						WidthList.push_back(value);
-					}
-					nextChar = *++pIter;
-				}
-			}
-
-			if (strncmp(STR_LAYERSETCHARWIDTHS, pIter, strlen(STR_LAYERSETCHARWIDTHS) - 1) == 0)
-			{
-				pIter += strlen(STR_LAYERSETCHARWIDTHS);
-
-				char nextChar = *pIter;
-				while (nextChar != ';' && nextChar != '\0')
-				{
-					if (nextChar >= '0' && nextChar <= '9')
-					{
-						//	Reading a numeral
-						long value = strtol(pIter, &pIter, 10);
-
-						//	This is the space character
-						CharList.push_back(' ');
-						WidthList.push_back(value);
-
-						nextChar = *++pIter;	//	Advance past closing '
-					}
-
-					nextChar = *++pIter;
-				}
-			}
-			
-			++pIter;
+			//	Files that start with numbers tend to be simple ones (Score, timer etc)
+			ParseSimpleFont(buffer, fontID);
 		}
-
-		assert(CharList.size() == WidthList.size());
-
-		FontOffsetMap& OffsetMap = m_fontXOffsets[fontID];
-
-		int iOffset = 0;
-		for (size_t i = 0; i < CharList.size(); ++i)
+		else
 		{
-			char nextChar = CharList[i];
-			OffsetMap[nextChar].uWidth = static_cast<Uint16>(WidthList[i]);
-			OffsetMap[nextChar].uXOffset = nextChar == ' ' ? -1 : iOffset;
-			iOffset += WidthList[i];
+			ParseComplexFont(buffer, fontID);
 		}
-
-		//m_mainFontXOffsets[' '].uWidth = 10;
-		//m_mainFontXOffsets[' '].uXOffset = 0;
 
 		delete[](buffer);
 	}
+}
+
+int SDLRenderer::GetCharWidthPx(const std::string& fontID, char wantedChar) const
+{
+	auto iter = m_fontXOffsets.find(fontID);
+	if (iter != m_fontXOffsets.end())
+	{
+		auto iter2 = iter->second.find(wantedChar);
+		if (iter2 != iter->second.end())
+		{
+			return iter2->second.uWidth;
+		}
+	}
+
+	printf("Can't find char '%c' in font ID '%s'", wantedChar, fontID.c_str());
+	return 0;
+}
+
+int SDLRenderer::GetFontHeight(const std::string& fontID) const
+{
+	auto iter = m_fontHeights.find(fontID);
+	if (iter != m_fontHeights.end())
+	{
+		return (*iter).second;
+	}
+
+	return 0;
+}
+
+int SDLRenderer::CalculateStringWidth(const std::string& fontID, const char* buffer) const
+{
+	int width = 0;
+	auto OffsetsIter = m_fontXOffsets.find(fontID);
+	if (OffsetsIter != m_fontXOffsets.end())
+	{
+		const FontOffsetMap& Offsets = (*OffsetsIter).second;
+
+		const char* pIter = buffer;
+		while (pIter != nullptr && *pIter != '\0')
+		{
+			std::map<char, FontOffsetData>::const_iterator iter = Offsets.find(*pIter);
+			if (iter != Offsets.end())
+			{
+				const FontOffsetData& data = iter->second;
+				width += data.uWidth;
+			}
+			pIter++;
+		}
+	}
+
+	return width;
 }

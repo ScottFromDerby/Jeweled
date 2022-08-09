@@ -4,18 +4,22 @@
 #include "ActiveObject.h"
 #include "AlgorithmHelper.h"
 #include <string>
+#include <vector>
 
 class ActiveObject;
 class AOJewel;
 class AOSelectionCursor;
 class AOButton;
+class AOScore;
+class AOScoreBar;
+class AOScorePopup;
 
 const unsigned short BOARD_SIZE = 8;
 const unsigned short JEWEL_SIZE = 52;
 const unsigned short JEWEL_SPACING = 51;
 const unsigned short SELECTION_CURSOR_SIZE = 52;
 const unsigned short NUM_JEWEL_TYPES = 7;
-const unsigned short MAIN_BOARD_OFFSET_X = 200;
+const unsigned short MAIN_BOARD_OFFSET_X = 201;
 const unsigned short MAIN_BOARD_OFFSET_Y = 16;
 
 //	See gemsheet6.png for jewel images
@@ -53,9 +57,10 @@ public:
 
 	bool GenerateNextTileBackground( const unsigned int level );
 
-	bool HandleMouseClickDownAt( const int& x, const int& y );
-	bool HandleMouseClickUpAt( const int& x, const int& y );
-	bool HandleMouseHoverAt( const int& x, const int& y );
+	bool HandleMouseClickDownAt(int x, int y);
+	bool HandleMouseClickUpAt(int x, int y);
+	bool HandleMouseHoverAt(int x, int y);
+	bool HandleMouseDragAt(int x, int y);
 
 	bool EngagePauseMode();
 	bool ResumeFromPauseMode();
@@ -92,6 +97,11 @@ private: //variables
 	AOButton* m_options;
 	AOButton* m_hint;
 	AOButton* m_quit;
+	
+	AOScore* m_pScore;
+	AOScoreBar* m_pScoreBar;
+
+	std::vector<AOScorePopup*> m_pScorePopups;
 
 	SWAP_TYPE m_swapType; // for use when swapping is occuring
 
@@ -109,6 +119,9 @@ private: //variables
 	
 	int m_numMovesAvailable;
 	int m_cascadeAmount; // number of continuous ongoing cascades ( usually 0 )
+
+	int m_nTargetScoreForNextLevel = 2000;
+	int m_nScoreLeftToEarnOnThisLevel = 2000;
 
 public:
 	bool m_bNoRandCol;

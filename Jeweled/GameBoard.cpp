@@ -9,6 +9,9 @@
 #include "AOJewel.h"
 #include "AOSelectionCursor.h"
 #include "AOButton.h"
+#include "AOScore.h"
+#include "AOScorePopup.h"
+#include "AOScoreBar.h"
 
 #include <assert.h>
 #include <math.h>
@@ -19,6 +22,11 @@
 //  with the gameboard. Also contains various other
 //  ActiveObjects, such as buttons and dialogs.
 ////////////////////////////////////////////////////
+
+namespace
+{
+	constexpr const int PointsToAwardForTripletMatches[] = { 0, 10, 20, 30, 40, 50, 60, 70 };
+}
 
 
 GameBoard::GameBoard(const std::string& windowSpriteID, const std::string& gemSpriteSheetID, const std::string& backgroundTileSheetID)
@@ -104,6 +112,9 @@ int GameBoard::Init()
 	m_hint = new AOButton(VEC2(65, 305), VEC2(52, 72), "", "Hint-Hover", "", "", BUTTON_TYPE_HINT);
 	m_quit = new AOButton(VEC2(20, 404), VEC2(156, 40), "", "", "Quit-Pushed", "", BUTTON_TYPE_QUIT);
 
+	m_pScore = new AOScore(VEC2(93, 87));
+	m_pScoreBar = new AOScoreBar(VEC2(236, 444), VEC2(342, 25));
+
 	for (int i = 0; i < BOARD_SIZE; ++i)
 	{
 		m_numNewJewelsThisCascadePerColumn[i] = 0;
@@ -157,8 +168,16 @@ int GameBoard::Update()
 				m_selectedJewel->ResetDropTarget();
 				m_secondJewel->ResetDropTarget();
 
-				if (AlgorithmHelper::ProcessMatch3(m_board) > 0)
+				std::vector<AlgorithmHelper::MatchData> vData;
+
+				int numTripletsFound = AlgorithmHelper::ProcessMatch3(m_board, vData);
+				if (numTripletsFound > 0)
 				{
+					//int newPoints = PointsToAwardForTripletMatches[Max(numTripletsFound, 9)];
+
+					//	TBD: Cascade; multiplier
+					//m_pScore->AddToScore(newPoints);
+
 					swapAnimationStep = SWAP_STEP_END + 1;
 				}
 				else
@@ -176,8 +195,8 @@ int GameBoard::Update()
 				movementSpeed = STEP_PIXEL_COUNT[0];
 				m_bPerformingSwap = false;
 				m_selectedJewel->SetSelected(false);
-				m_selectedJewel = NULL;
-				m_secondJewel = NULL;
+				m_selectedJewel = nullptr;
+				m_secondJewel = nullptr;
 				m_selectionCursor->SetVisibility(false);
 			}
 			else
@@ -253,16 +272,44 @@ int GameBoard::Update()
 	if (!m_bJewelsInMotion && doCheck)
 	{
 		// Fetch the number of new matches (if any)
-		int newMatches = AlgorithmHelper::ProcessMatch3(m_board);
+		std::vector<AlgorithmHelper::MatchData> vData;
+
+		int numTripletsFound = AlgorithmHelper::ProcessMatch3(m_board, vData);
 		// Note that ProcessMatch3 will also set all matched
 		//  jewels to begin the 'Remove' animation
 
 		// If matches have been found (cascade occuring)
-		if (newMatches > 0)
+		if (numTripletsFound > 0)
 		{
 			// increment our current cascade amount by the number
 			//  of matches (becomes a 'multiplier')
-			m_cascadeAmount += newMatches;
+			//m_cascadeAmount += numTripletsFound;
+			m_cascadeAmount++;
+			//	NB. This might need improving to be increase cascade multiplier by "unique collections of triplets"
+			
+			for(AlgorithmHelper::MatchData& data : vData)
+			{
+				int newPoints = PointsToAwardForTripletMatches[Max(numTripletsFound, 9)];
+				newPoints *= m_cascadeAmount;
+				m_pScore->AddToScore(newPoints * m_cascadeAmount);
+
+				int popupXPos = MAIN_BOARD_OFFSET_X + (JEWEL_SPACING * data.xStart) + (JEWEL_SPACING / 2);
+				int popupYPos = MAIN_BOARD_OFFSET_Y + (JEWEL_SPACING * data.yStart) + (JEWEL_SPACING / 2);
+				if (data.bIsHorizontalMatch)
+				{
+					popupXPos += (JEWEL_SPACING * (data.numSymbols-1) / 2);
+				}
+				else
+				{
+					popupYPos += (JEWEL_SPACING * (data.numSymbols-1) / 2);
+				}
+
+				m_pScorePopups.push_back(new AOScorePopup(VEC2(popupXPos, popupYPos), newPoints));
+				m_pScoreBar->SetScore(m_pScore->GetScore());
+
+				m_nScoreLeftToEarnOnThisLevel -= newPoints;
+			}
+
 			// play sound - we have just found a new match!
 			SDLAudio::Get()->PlaySFX("GotSet", 1.0f);
 			SDLAudio::Get()->PlaySFX("Combo2", 1.0f);
@@ -339,6 +386,26 @@ int GameBoard::Update()
 	m_options->Update();
 	m_quit->Update();
 
+	m_pScore->Update();
+	m_pScoreBar->Update();
+
+	auto iter = m_pScorePopups.begin();
+	while (iter != m_pScorePopups.end())
+	{
+		(*iter)->Update();
+
+		if ((*iter)->ShouldKill())
+		{
+			delete(*iter);
+			iter = m_pScorePopups.erase(iter);
+		}
+		else
+		{
+			iter++;
+		}
+	}
+	
+
 	return 0;
 }
 
@@ -346,6 +413,9 @@ int GameBoard::Render()
 {
 	// base chequered board is at the back
 	SDLRenderer::Get()->DrawTexture(m_nextBackground, MAIN_BOARD_OFFSET_X - JEWEL_SPACING, MAIN_BOARD_OFFSET_Y - JEWEL_SPACING, 512, 512);
+
+	// enclose the gameboard with the board sprite (note alphas!)
+	SDLRenderer::Get()->DrawTexture(m_windowSpriteID, 0, 0, 640, 480);
 
 	// then (onboard) text or jewels
 	if (m_bPauseEnabled)
@@ -373,10 +443,15 @@ int GameBoard::Render()
 		m_newGameTimed->Render();
 		m_options->Render();
 		m_quit->Render();
+
+		for (auto* pPopup : m_pScorePopups)
+		{
+			pPopup->Render();
+		}
 	}
 
-	// finally, enclose the gameboard with the board sprite (note alphas!)
-	SDLRenderer::Get()->DrawTexture(m_windowSpriteID, 0, 0, 640, 480);
+	m_pScore->Render();
+	m_pScoreBar->Render();
 
 	return 0;
 }
@@ -510,7 +585,7 @@ bool AreJewelsAdjacent(AOJewel* jewel1, AOJewel* jewel2, SWAP_TYPE& swapType)
 
 	return false;
 }
-bool GameBoard::HandleMouseClickUpAt(const int& x, const int& y)
+bool GameBoard::HandleMouseClickUpAt(int x, int y)
 {
 	m_newGame->HandleMouseClickUpAt(x, y);
 	m_newGameNormal->HandleMouseClickUpAt(x, y);
@@ -522,51 +597,44 @@ bool GameBoard::HandleMouseClickUpAt(const int& x, const int& y)
 	return true;
 }
 
-bool GameBoard::HandleMouseClickDownAt(const int& x, const int& y)
+bool GameBoard::HandleMouseClickDownAt(int x, int y)
 {
-	Rect br = GetBoardRect();
-
+	// if busy? Do nothing.
 	if (m_bJewelsInMotion || m_bPerformingSwap)
 		return true;
+
+	Rect br = GetBoardRect();
 
 	if (m_bPauseEnabled)
 	{
 		// Click within gameboard when paused - should unpause!
-		if (x > br.left && x < br.right && y > br.top && y < br.bottom)
+		if (br.Contains(x, y))
+		{
 			m_bPauseEnabled = false;
+		}
 	}
 	else
 	{
-		// if busy? Do nothing.
-		if (m_bPerformingSwap || m_bJewelsInMotion)
-			return true;
-
-		// standard click
-		if (x > br.left && x < br.right && y > br.top && y < br.bottom)
+		//	standard click
+		if (br.Contains(x, y))
 		{
-			// within board
-			AOJewel* nextJewel = GetJewelAt(x, y);
-			if (nextJewel != NULL)
+			//	within board
+			if (AOJewel* nextJewel = GetJewelAt(x, y))
 			{
-				// on a jewel
+				//	on a jewel
 				if (!nextJewel->IsSelected())
 				{
-					// that is not yet selected
+					//	that is not yet selected
 					if (m_selectedJewel != NULL)
 					{
-						// and we have already previously selected another jewel
-						if (AreJewelsAdjacent(m_selectedJewel, nextJewel,
-							m_swapType))
+						//	and we have already previously selected another jewel
+						if (AreJewelsAdjacent(m_selectedJewel, nextJewel, m_swapType))
 						{
 							// and these jewels are adjacent
 
 							// init. attempt swap of these jewels
-							printf("**Attempting swap of jewels "
-								"at (%d,%d) and (%d,%d)!**\n",
-								m_selectedJewel->GetXPos(),
-								m_selectedJewel->GetYPos(),
-								nextJewel->GetXPos(),
-								nextJewel->GetYPos());
+							printf("**Attempting swap of jewels at (%d,%d) and (%d,%d)!**\n",
+								m_selectedJewel->GetXPos(), m_selectedJewel->GetYPos(), nextJewel->GetXPos(), nextJewel->GetYPos());
 
 							m_secondJewel = nextJewel;
 
@@ -597,7 +665,7 @@ bool GameBoard::HandleMouseClickDownAt(const int& x, const int& y)
 					// jewel was already selected
 					nextJewel->HandleMouseClickDownAt(x, y);
 					// clicking on an already selected jewel...
-					m_selectedJewel = NULL;
+					m_selectedJewel = nullptr;
 				}
 			}
 		}
@@ -613,7 +681,7 @@ bool GameBoard::HandleMouseClickDownAt(const int& x, const int& y)
 	return true;
 }
 
-bool GameBoard::HandleMouseHoverAt(const int& x, const int& y)
+bool GameBoard::HandleMouseHoverAt(int x, int y)
 {
 	AOJewel* pJewel = GetJewelAt(x, y);
 	if (pJewel != nullptr && !m_bPauseEnabled)
@@ -633,6 +701,52 @@ bool GameBoard::HandleMouseHoverAt(const int& x, const int& y)
 	m_hint->HandleMouseHoverAt(x, y);
 	m_quit->HandleMouseHoverAt(x, y);
 
+	return true;
+}
+
+bool GameBoard::HandleMouseDragAt(int x, int y)
+{
+	if( m_selectedJewel != nullptr)
+	{
+		//	Are we dragging outside the current selected jewel?
+		if( x < m_selectedJewel->GetXPos() )
+		{
+			//	Attempt select jewel to the left, if we can
+			//printf("Select to left\n");
+			if (m_selectedJewel->m_initialGridXPos > 0)
+			{
+				return HandleMouseClickDownAt(x, y);
+			}
+		}
+		else if( x >= m_selectedJewel->GetXPos() + JEWEL_SPACING )
+		{
+			//	Attempt select jewel to the right, if we can
+			//printf("Select to right\n");
+			if (m_selectedJewel->m_initialGridXPos < BOARD_SIZE)
+			{
+				return HandleMouseClickDownAt(x, y);
+			}
+		}
+		else if (y < m_selectedJewel->GetYPos())
+		{
+			//	Attempt select jewel to the left, if we can
+			//printf("Select to top\n");
+			if (m_selectedJewel->m_initialGridYPos > 0)
+			{
+				return HandleMouseClickDownAt(x, y);
+			}
+		}
+		else if (y >= m_selectedJewel->GetYPos() + JEWEL_SPACING)
+		{
+			//	Attempt select jewel to the right, if we can
+			//printf("Select to bottom\n");
+			if (m_selectedJewel->m_initialGridYPos < BOARD_SIZE)
+			{
+				return HandleMouseClickDownAt(x, y);
+			}
+		}
+
+	}
 	return true;
 }
 

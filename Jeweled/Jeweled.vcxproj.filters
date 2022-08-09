@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="AlgorithmHelper.cpp" />
+    <ClCompile Include="GameBoard.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="MouseCursor.cpp" />
+    <ClCompile Include="SDLAudio.cpp" />
+    <ClCompile Include="SDLRenderer.cpp" />
+    <ClCompile Include="ActiveObject.cpp">
+      <Filter>ActiveObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="AOButton.cpp">
+      <Filter>ActiveObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="AODialog.cpp">
+      <Filter>ActiveObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="AOJewel.cpp">
+      <Filter>ActiveObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="AOPressStartBtn.cpp">
+      <Filter>ActiveObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="AOScore.cpp">
+      <Filter>ActiveObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="AOScorePopup.cpp">
+      <Filter>ActiveObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="AOSelectionCursor.cpp">
+      <Filter>ActiveObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="AOScoreBar.cpp">
+      <Filter>ActiveObjects</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AlgorithmHelper.h" />
+    <ClInclude Include="GameBoard.h" />
+    <ClInclude Include="MouseCursor.h" />
+    <ClInclude Include="SDLAudio.h" />
+    <ClInclude Include="SDLRenderer.h" />
+    <ClInclude Include="ActiveObject.h">
+      <Filter>ActiveObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="AOButton.h">
+      <Filter>ActiveObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="AODialog.h">
+      <Filter>ActiveObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="AOJewel.h">
+      <Filter>ActiveObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="AOPressStartBtn.h">
+      <Filter>ActiveObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="AOScore.h">
+      <Filter>ActiveObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="AOScorePopup.h">
+      <Filter>ActiveObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="AOSelectionCursor.h">
+      <Filter>ActiveObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="AOScoreBar.h">
+      <Filter>ActiveObjects</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="ActiveObjects">
+      <UniqueIdentifier>{1e3cd9f4-f870-4764-aec2-169a4e1ceabe}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -4,8 +4,8 @@
 
 #include "AlgorithmHelper.h"
 #include "AOSelectionCursor.h"
+#include "AOPressStartBtn.h"
 #include "GameBoard.h"
-#include "main.h"
 #include "MouseCursor.h"
 
 #include "SDL.h"
@@ -32,6 +32,8 @@ const float GAME_DEFAULT_VOLUME = 0.8f;
 // The board - contains all jewel objects
 GameBoard* g_pGameBoard = nullptr;
 
+AOPressStartBtn* g_pPressStartBtn = nullptr;
+
 // current framerate
 //double g_currentFrameRate;
 
@@ -54,6 +56,9 @@ int init()
 
 	pRenderer->ParseFontData("..\\Resources\\afont1.txt", "AFont1");
 	pRenderer->ParseFontData("..\\Resources\\mainfont1.txt", "MainFont");
+	pRenderer->ParseFontData("..\\Resources\\scorefont1.txt", "ScoreFont");
+	pRenderer->ParseFontData("..\\Resources\\alphadigits4.txt", "ScorePopupFont");
+	pRenderer->ParseFontData("..\\Resources\\overfont2.txt", "OverFont");
 
 	//	Load in some shared board sprites
 	pRenderer->AddImage("..\\Resources\\titlescreen6.jpg", "TitleScreen");
@@ -64,10 +69,18 @@ int init()
 	pRenderer->AddImage("..\\Resources\\dialogbox360-200.tga", "DialogBox");
 	pRenderer->AddImage("..\\Resources\\_afont1.gif", "AFont1");
 	pRenderer->AddImage("..\\Resources\\_mainfont1.gif", "MainFont");
+	pRenderer->AddImage("..\\Resources\\scorefont1.png", "ScoreFont");
+	pRenderer->AddImage("..\\Resources\\alphadigits4.png", "ScorePopupFont");
+	pRenderer->AddImage("..\\Resources\\overfont2.png", "OverFont");
+	pRenderer->AddImage("..\\Resources\\timerbar.png", "ScoreBar");
+	
+	
 
 	//	Load/Init GameBoard object
 	g_pGameBoard = new GameBoard("WindowBase", "JewelSpriteSheet", "BackgroundTileSheet");
 	g_pGameBoard->Init();
+
+	g_pPressStartBtn = new AOPressStartBtn(VEC2(212, 387));
 
 	//	Load/Init Mouse Cursor
 	MouseCursor::Get()->Init();
@@ -106,16 +119,20 @@ int update()
 
 int render()
 {
-	static SDLRenderer* renderer = SDLRenderer::Get();
+	static SDLRenderer* pRenderer = SDLRenderer::Get();
 
-	renderer->StartDrawing();
+	pRenderer->StartDrawing();
 
 	switch (g_currentGameState)
 	{
 	case GS_SPLASH:
-		renderer->DrawTexture("TitleScreen", 0, 0, 640, 480);
-		renderer->DrawStr("AFont1", 208, 380, "CLICK HERE TO PLAY!", 0xff00ff00);
-		renderer->DrawStr("MainFont", 490, 210, "Version 1.xx", 0xff888888);
+		pRenderer->DrawTexture("TitleScreen", 0, 0, 640, 480);
+		g_pPressStartBtn->Render();
+		//pRenderer->DrawStr("AFont1", 208, 380, "CLICK HERE TO PLAY!", 0xff00ff00);
+		pRenderer->DrawStr("MainFont", 490, 210, "Version 1.xx", 0xff888888);
+		//pRenderer->DrawStr("ScoreFont", 490, 310, "0123456", 0xffffffff);
+		//pRenderer->DrawStr("ScorePopupFont", 390, 410, "+50+100+150", 0xffffffff);
+		//pRenderer->DrawStr("OverFont", 290, 110, "GAME OVER", 0xffffffff);
 		break;
 	case GS_INGAME:
 		g_pGameBoard->Render();
@@ -128,7 +145,7 @@ int render()
 	// Finally draw cursor on top of everything
 	MouseCursor::Get()->Render();
 
-	renderer->EndDrawing();
+	pRenderer->EndDrawing();
 
 	return 0;
 }
@@ -333,9 +350,13 @@ int SDL_main(int argc, char* argv[])
 				//	##SB move all this to gamestate handler
 				if (g_currentGameState == GS_SPLASH)
 				{
-					g_currentGameState = GS_INGAME;
-					SDLAudio::Get()->SetMusic("Music3", GAME_DEFAULT_VOLUME);
-					SDLAudio::Get()->PlaySFX("Go", GAME_DEFAULT_VOLUME);
+					g_pPressStartBtn->HandleMouseClickUpAt(ev.button.x, ev.button.y);
+					if( g_pPressStartBtn->IsSelected() )
+					{
+						g_currentGameState = GS_INGAME;
+						SDLAudio::Get()->SetMusic("Music3", GAME_DEFAULT_VOLUME);
+						SDLAudio::Get()->PlaySFX("Go", GAME_DEFAULT_VOLUME);
+					}
 				}
 				else
 				{
@@ -352,6 +373,15 @@ int SDL_main(int argc, char* argv[])
 					{
 						g_pGameBoard->HandleMouseHoverAt(ev.motion.x, ev.motion.y);
 					}
+
+					if (SDL_GetMouseState(nullptr, nullptr) & SDL_MOUSEBUTTONDOWN)
+					{
+						g_pGameBoard->HandleMouseDragAt(ev.motion.x, ev.motion.y);
+					}
+				}
+				else if( g_currentGameState == GS_SPLASH )
+				{
+					g_pPressStartBtn->HandleMouseHoverAt(ev.motion.x, ev.motion.y);
 				}
 			}
 			default:

@@ -10,6 +10,11 @@ struct Rect
 	int top;
 	int right;
 	int bottom;
+
+	bool Contains(int x, int y)
+	{
+		return x >= left && x < right && y >= top && y < bottom;
+	}
 };
 
 class VEC2
@@ -54,9 +59,9 @@ public:
 	virtual void SetVisibility(bool visible) { m_bIsVisible = visible; };
 
 	virtual const char* GetType() = 0; // pure virtual
-	virtual bool HandleMouseClickDownAt(int x, int y) = 0; // pure virtual
-	virtual bool HandleMouseClickUpAt(int x, int y) = 0; // pure virtual
-	virtual bool HandleMouseHoverAt(int x, int y) = 0; // pure virtual
+	virtual bool HandleMouseClickDownAt(int x, int y)	{ return false; }
+	virtual bool HandleMouseClickUpAt(int x, int y)		{ return false; }
+	virtual bool HandleMouseHoverAt(int x, int y)		{ return false; }
 
 protected:
 	// Active Object properties

@@ -223,6 +223,10 @@ xcopy ..\SDL2_mixer-2.0.4\lib\x64\libvorbisfile-3.dll $(OutputPath) /y
     <ClCompile Include="AOButton.cpp" />
     <ClCompile Include="AODialog.cpp" />
     <ClCompile Include="AOJewel.cpp" />
+    <ClCompile Include="AOPressStartBtn.cpp" />
+    <ClCompile Include="AOScore.cpp" />
+    <ClCompile Include="AOScoreBar.cpp" />
+    <ClCompile Include="AOScorePopup.cpp" />
     <ClCompile Include="AOSelectionCursor.cpp" />
     <ClCompile Include="GameBoard.cpp" />
     <ClCompile Include="main.cpp" />
@@ -236,9 +240,12 @@ xcopy ..\SDL2_mixer-2.0.4\lib\x64\libvorbisfile-3.dll $(OutputPath) /y
     <ClInclude Include="AOButton.h" />
     <ClInclude Include="AODialog.h" />
     <ClInclude Include="AOJewel.h" />
+    <ClInclude Include="AOPressStartBtn.h" />
+    <ClInclude Include="AOScore.h" />
+    <ClInclude Include="AOScoreBar.h" />
+    <ClInclude Include="AOScorePopup.h" />
     <ClInclude Include="AOSelectionCursor.h" />
     <ClInclude Include="GameBoard.h" />
-    <ClInclude Include="main.h" />
     <ClInclude Include="MouseCursor.h" />
     <ClInclude Include="SDLAudio.h" />
     <ClInclude Include="SDLRenderer.h" />

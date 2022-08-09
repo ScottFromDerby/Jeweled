@@ -97,12 +97,14 @@ void AlgorithmHelper::GenerateNewBoard(unsigned short board[8][8])
 			}
 		}
 
+		std::vector<AlgorithmHelper::MatchData> vData;
+
 		// Process existing matches
-		int numToProcess = ProcessMatch3(board);
+		int numToProcess = ProcessMatch3(board, vData);
 		while (numToProcess > 0)
 		{
 			ProcessDrop(board);
-			numToProcess = ProcessMatch3(board);
+			numToProcess = ProcessMatch3(board, vData);
 		}
 
 		availableMoves = CountAvailableMoves(board);
@@ -286,7 +288,7 @@ unsigned int AlgorithmHelper::CountAvailableMoves(unsigned short board[8][8])
 	return retVal;
 }
 
-unsigned int AlgorithmHelper::ProcessMatch3(AOJewel* board[8][8])
+unsigned int AlgorithmHelper::ProcessMatch3(AOJewel* board[8][8], std::vector<MatchData>& vMatchFoundData)
 {
 	// This function will be called when the board needs to be scanned for all
 	//  matched jewels that need to be removed.
@@ -306,7 +308,7 @@ unsigned int AlgorithmHelper::ProcessMatch3(AOJewel* board[8][8])
 		}
 	}
 
-	unsigned int numMatches = ProcessMatch3(boardRef);
+	unsigned int numMatches = ProcessMatch3(boardRef, vMatchFoundData);
 
 	// if we have nothing to do, don't bother with the extra for() loop.
 	if (numMatches == 0)
@@ -326,10 +328,56 @@ unsigned int AlgorithmHelper::ProcessMatch3(AOJewel* board[8][8])
 		}
 	}
 
+	//	Finally; iterate through vMatchFoundData and combine 3s into 4s and 5s or more
+	//	NB. if you match an entire row, we only need to iterate this 5 times
+	for (int numIters = 0; numIters < 5; ++numIters)
+	{
+		for (int i = 0; i < (int)vMatchFoundData.size() - 1; ++i)
+		{
+			MatchData& thisMatch = vMatchFoundData[i];
+			MatchData& nextMatch = vMatchFoundData[i+1];
+			if(nextMatch.xStart == -1 || nextMatch.yStart == -1 )
+			{
+				continue;
+			}
+			if (thisMatch.bIsHorizontalMatch && nextMatch.bIsHorizontalMatch)
+			{
+				if (thisMatch.yStart == nextMatch.yStart)
+				{
+					thisMatch.numSymbols++;
+					nextMatch.xStart = -1;
+					nextMatch.yStart = -1;
+				}
+			}
+			else if (!thisMatch.bIsHorizontalMatch && !nextMatch.bIsHorizontalMatch)
+			{
+				if (thisMatch.xStart == nextMatch.xStart)
+				{
+					thisMatch.numSymbols++;
+					nextMatch.xStart = -1;
+					nextMatch.yStart = -1;
+				}
+			}
+		}
+	}
+
+	auto iter = vMatchFoundData.begin();
+	while (iter != vMatchFoundData.end())
+	{
+		if (iter->xStart == -1 || iter->yStart == -1)
+		{
+			iter = vMatchFoundData.erase(iter);
+		}
+		else
+		{
+			iter++;
+		}
+	}
+
 	return numMatches;
 }
 
-unsigned int AlgorithmHelper::ProcessMatch3(unsigned short board[8][8])
+unsigned int AlgorithmHelper::ProcessMatch3(unsigned short board[8][8], std::vector<MatchData>& vMatchFoundData)
 {
 	// This function finds all sets of three or more of the same array value
 	//  and sets them to be '100', which we can later Remove() the 
@@ -350,7 +398,7 @@ unsigned int AlgorithmHelper::ProcessMatch3(unsigned short board[8][8])
 	memcpy_s(newBoard, BOARD_SIZE * BOARD_SIZE * sizeof(unsigned short),
 		board, BOARD_SIZE * BOARD_SIZE * sizeof(unsigned short));
 
-	// find all horizontal triplets
+	// find all vertical triplets
 	for (int i = 0; i < BOARD_SIZE; ++i)
 	{
 		for (int j = 0; j < BOARD_SIZE - 2; ++j)
@@ -361,12 +409,15 @@ unsigned int AlgorithmHelper::ProcessMatch3(unsigned short board[8][8])
 				newBoard[i][j] = DEAD_JEWEL;
 				newBoard[i][j + 1] = DEAD_JEWEL;
 				newBoard[i][j + 2] = DEAD_JEWEL;
+
+				vMatchFoundData.push_back({ i, j, false, 3 });
+
 				retVal++;
 			}
 		}
 	}
 
-	// find all vertical triplets
+	// find all horizontal triplets
 	for (int i = 0; i < BOARD_SIZE - 2; ++i)
 	{
 		for (int j = 0; j < BOARD_SIZE; ++j)
@@ -377,6 +428,9 @@ unsigned int AlgorithmHelper::ProcessMatch3(unsigned short board[8][8])
 				newBoard[i][j] = DEAD_JEWEL;
 				newBoard[i + 1][j] = DEAD_JEWEL;
 				newBoard[i + 2][j] = DEAD_JEWEL;
+
+				vMatchFoundData.push_back({ i, j, true, 3 });
+
 				retVal++;
 			}
 		}

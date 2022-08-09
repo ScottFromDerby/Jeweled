@@ -225,16 +225,16 @@ void AOJewel::Remove()
 
 void AOJewel::SetDropTarget(int newYPosTarget)
 {
-	if (newYPosTarget >= m_pixelDropTarget)
+	//if (newYPosTarget >= m_pixelDropTarget)
 	{
 		printf("Drop target dropping from %d to %d\n", m_pixelDropTarget, newYPosTarget);
 		m_bIsDropping = true;
 		m_pixelDropTarget = newYPosTarget;
 	}
-	else
+	//else
 	{
 		// trying to set a drop target above this jewel: use ResetDropTarget() instead!
-		SDL_assert(!"trying to set a drop target above this jewel: use ResetDropTarget() instead!");
+		//SDL_assert(!"trying to set a drop target above this jewel: use ResetDropTarget() instead!");
 	}
 }
 
